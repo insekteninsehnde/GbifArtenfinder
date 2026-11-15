@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650">
+<defs><style>
+.t{font: bold 24px Arial;fill:#12302a}.h{font:bold 17px Arial;fill:#12302a}.p{font:14px Arial;fill:#334155}
+.box{fill:#fff;stroke:#94a3b8;stroke-width:2;rx:16}.green{fill:#ecfdf5;stroke:#059669;stroke-width:2;rx:16}
+.blue{fill:#eff6ff;stroke:#3b82f6;stroke-width:2;rx:16}.amber{fill:#fffbeb;stroke:#d97706;stroke-width:2;rx:16}
+.arrow{stroke:#64748b;stroke-width:3;fill:none;marker-end:url(#a)}
+</style><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0 L9 3 L0 6Z" fill="#64748b"/></marker></defs>
+<rect width="1200" height="650" fill="#f8fafc"/>
+<text x="600" y="42" text-anchor="middle" class="t">GBIF Artenfinder – technische Übersicht</text>
+<rect x="35" y="90" width="270" height="170" class="green"/><text x="170" y="125" text-anchor="middle" class="h">Benutzeroberfläche</text>
+<text x="60" y="160" class="p">• Art / Familie suchen</text><text x="60" y="188" class="p">• Ort und Suchgeometrie wählen</text><text x="60" y="216" class="p">• Ergebnisse filtern / sortieren</text><text x="60" y="244" class="p">• CSV und Phänologie</text>
+<rect x="360" y="90" width="260" height="170" class="box"/><text x="490" y="125" text-anchor="middle" class="h">JavaScript-Anwendungslogik</text>
+<text x="385" y="160" class="p">• Taxon-Auflösung</text><text x="385" y="188" class="p">• Geometrie &amp; API-Abfragen</text><text x="385" y="216" class="p">• Daten-Normalisierung</text><text x="385" y="244" class="p">• Marker, Liste, Export</text>
+<path d="M305 175 H350" class="arrow"/><path d="M620 175 H665" class="arrow"/>
+<rect x="675" y="75" width="235" height="105" class="blue"/><text x="792" y="112" text-anchor="middle" class="h">GBIF API</text><text x="792" y="140" text-anchor="middle" class="p">Taxonomie &amp; Fundmeldungen</text><text x="792" y="160" text-anchor="middle" class="p">species / occurrence</text>
+<rect x="675" y="215" width="235" height="105" class="blue"/><text x="792" y="252" text-anchor="middle" class="h">OpenStreetMap</text><text x="792" y="280" text-anchor="middle" class="p">Kartenkacheln &amp; Geocoding</text><text x="792" y="300" text-anchor="middle" class="p">Nominatim</text>
+<rect x="675" y="355" width="235" height="105" class="blue"/><text x="792" y="392" text-anchor="middle" class="h">iNaturalist (optional)</text><text x="792" y="420" text-anchor="middle" class="p">Beobachter-Zusatzinfos</text><text x="792" y="440" text-anchor="middle" class="p">bei passenden Nachweis-URLs</text>
+<path d="M620 190 C645 190 645 127 665 127" class="arrow"/><path d="M620 205 C650 205 650 267 665 267" class="arrow"/><path d="M620 225 C645 225 645 407 665 407" class="arrow"/>
+<rect x="960" y="90" width="205" height="170" class="amber"/><text x="1062" y="125" text-anchor="middle" class="h">Ergebnisansicht</text>
+<text x="980" y="160" class="p">• Kartenmarker</text><text x="980" y="188" class="p">• Funddetails</text><text x="980" y="216" class="p">• Wochen-/Phänologiechart</text><text x="980" y="244" class="p">• CSV-Datei</text>
+<path d="M910 175 H950" class="arrow"/>
+<rect x="35" y="370" width="575" height="205" class="box"/><text x="322" y="408" text-anchor="middle" class="h">Optionale lokale Proxy-Komponente</text>
+<text x="70" y="450" class="p">proxy_server.py (separat bereitzustellen)</text><text x="70" y="480" class="p">Kann externe Nachweis-Seiten abrufen, wenn Browser-CORS blockiert.</text><text x="70" y="510" class="p">Mit Playwright/Chromium können JavaScript-Seiten gerendert werden.</text><text x="70" y="540" class="p">Nicht erforderlich für die normale GBIF-Kartensuche.</text>
+<path d="M610 475 H640 V460 H665" class="arrow"/>
+<text x="600" y="620" text-anchor="middle" class="p">Schematische Darstellung der Komponenten und Datenflüsse (kein Laufzeit-Screenshot).</text>
+</svg>
