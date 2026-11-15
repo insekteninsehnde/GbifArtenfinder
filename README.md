@@ -48,7 +48,7 @@ Die HTML-Datei enthält voreingestellte Beispielwerte: **Vanessa cardui (Distelf
 
 Die Oberfläche gliedert sich in eine obere Suchleiste und einen zweigeteilten Arbeitsbereich: links die Karte, rechts die Ergebnisliste mit Auswertungs- und Exportfunktionen.
 
-![Schematische Bedienoberfläche des GBIF Artenfinders](readme-assets/oberflaeche-schematisch.svg)
+![Schematische Bedienoberfläche des GBIF Artenfinders](readme-assets/oberflaeche-schematisch.jpg)
 
 *Die Abbildung ist eine eigens erstellte schematische Darstellung der Bedienelemente, kein Screenshot der laufenden Anwendung.*
 
