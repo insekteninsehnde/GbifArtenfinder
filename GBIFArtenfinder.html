@@ -1,0 +1,2247 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GBIF Artenfinder – Interaktive Kartensuche</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        emerald: {
+                            850: '#064e3b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+        /* Benutzerdefinierte Scrollbars und Karten-Anpassungen */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        /* Ziehpunkte (Handles) für das Such-Kästchen */
+        .bbox-handle {
+            background-color: #059669;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+            cursor: nwse-resize;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+        .bbox-handle:hover {
+            transform: scale(1.25);
+            background-color: #047857;
+        }
+        .bbox-handle-ne-sw {
+            cursor: nesw-resize;
+        }
+        .poly-handle { cursor: grab; }
+        .poly-handle-first { background-color: #f59e0b; }
+        .poly-mid {
+            background: #ffffff; border: 2px solid #059669; border-radius: 50%;
+            opacity: 0.8; cursor: copy; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+        .poly-mid:hover { opacity: 1; transform: scale(1.3); }
+        .bbox-move-handle {
+            background-color: #10b981;
+            border: 2px solid #ffffff;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+        }
+        /* Elegante Scrollbar für Ergebnisliste */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Leaflet Popup Styling */
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            padding: 0;
+        }
+        .leaflet-popup-content {
+            margin: 14px 16px;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen lg:h-screen lg:overflow-hidden">
+
+    <!-- Benachrichtigungs-Toast (statt alert()) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Header & Suchleiste -->
+    <header class="bg-white border-b border-slate-200 shadow-sm z-30 shrink-0">
+        <div class="max-w-[1920px] mx-auto px-4 py-3">
+            <!-- Obere Zeile: Branding & Schnell-Chips -->
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">GBIF Artenfinder</h1>
+                        <p class="text-xs text-slate-500 hidden sm:block">Interaktive Umkreis- &amp; Kästchensuche für Biodiversitätsdaten</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Steuerungs-Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end">
+                
+                <!-- 1. Artsuche mit Autocomplete -->
+                <div class="md:col-span-4 relative">
+                    <label for="species-input" class="block text-xs font-semibold text-slate-600 mb-1">
+                        1. Art oder Familie suchen (wiss. oder deutsch)
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="species-input" 
+                            value="Vanessa cardui"
+                            placeholder="z. B. Vanessa cardui, Pieridae, Weißlinge, Rotmilan..."
+                            autocomplete="off"
+                            class="w-full pl-9 pr-8 py-2 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+                        />
+                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <button type="button" id="clear-species-btn" title="Eingabe löschen" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Ausgewähltes Taxon Badge -->
+                    <div id="selected-taxon-info" class="text-[11px] text-emerald-700 mt-0.5 truncate">
+                        Gewählt: <span class="font-semibold italic">Vanessa cardui</span> (Distelfalter)
+                    </div>
+                    <!-- Autocomplete Dropdown -->
+                    <ul id="species-suggestions" class="hidden absolute left-0 right-0 top-[62px] bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto z-50 divide-y divide-slate-100"></ul>
+                </div>
+
+                <!-- 2. Ortssuche (Nominatim) -->
+                <div class="md:col-span-3 relative">
+                    <label for="location-input" class="block text-xs font-semibold text-slate-600 mb-1">
+                        2. Ort suchen (oder Karte anklicken)
+                    </label>
+                    <div class="flex gap-1.5">
+                        <div class="relative flex-1">
+                            <input 
+                                type="text" 
+                                id="location-input" 
+                                value="Sehnde"
+                                placeholder="Ort, PLZ oder Region..."
+                                class="w-full pl-8 pr-2 py-2 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+                            />
+                            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                        <button type="button" id="location-search-btn" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 transition shrink-0">
+                            Ort finden
+                        </button>
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-0.5 truncate">
+                        Tipp: Klick auf Karte setzt Kästchen neu
+                    </div>
+                </div>
+
+                <!-- 3. Kästchen-Größe / Radius -->
+                <div class="md:col-span-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="radius-select" class="text-xs font-semibold text-slate-600">
+                            3. Kästchen-Radius (Umkreis)
+                        </label>
+                        <span id="bbox-size-label" class="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            ca. 10 × 10 km
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select id="radius-select" class="w-full py-2 px-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition">
+                            <option value="1">1 km Radius (2 × 2 km Kästchen)</option>
+                            <option value="2">2 km Radius (4 × 4 km Kästchen)</option>
+                            <option value="5" selected>5 km Radius (10 × 10 km Kästchen)</option>
+                            <option value="10">10 km Radius (20 × 20 km Kästchen)</option>
+                            <option value="20">20 km Radius (40 × 40 km Kästchen)</option>
+                            <option value="custom" disabled>Individuell gezogen</option>
+                        </select>
+                    </div>
+                    <div id="bbox-coords-display" class="text-[10px] font-mono text-slate-500 mt-0.5 truncate">
+                        Lat: 52.271–52.361 | Lon: 9.890–10.038
+                    </div>
+                </div>
+
+                <!-- 4. Such-Button -->
+                <div class="md:col-span-2">
+                    <button 
+                        type="button" 
+                        id="search-gbif-btn" 
+                        class="w-full py-2 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow transition flex items-center justify-center gap-2 h-[38px]"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <span>Bei GBIF suchen</span>
+                    </button>
+                    <div class="text-[11px] text-slate-400 mt-0.5 text-center truncate">
+                        Max. 1.000 Funde pro Box
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- Hauptbereich: Split-Screen (Karte links, Ergebnisliste rechts) -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- Linke Seite: Interaktive Karte -->
+        <section class="relative w-full lg:w-[55%] xl:w-[58%] h-[420px] sm:h-[480px] lg:h-full border-b lg:border-b-0 lg:border-r border-slate-200 shrink-0">
+            <div id="map"></div>
+
+            <!-- Modus: Rechteck oder frei gezeichnete Fläche -->
+            <div id="mode-panel" class="absolute top-3 left-14 z-[500] bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl shadow-md px-2 py-1.5 flex flex-wrap items-center gap-1.5 text-xs max-w-[calc(100%-4.5rem)]">
+                <button type="button" id="mode-rect-btn" class="px-2.5 py-1 rounded-lg font-semibold border transition">▭ Rechteck</button>
+                <button type="button" id="mode-poly-btn" class="px-2.5 py-1 rounded-lg font-semibold border transition">⬠ Fläche zeichnen</button>
+                <span id="poly-actions" class="hidden inline-flex flex-wrap items-center gap-1.5">
+                    <button type="button" id="poly-close-btn" class="px-2 py-1 rounded-lg font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition">✓ Schließen &amp; suchen</button>
+                    <button type="button" id="poly-undo-btn" class="px-2 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition">↶ Punkt zurück</button>
+                    <button type="button" id="poly-clear-btn" class="px-2 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition">✕ Neu</button>
+                </span>
+                <span id="poly-hint" class="hidden basis-full text-[11px] text-slate-500 leading-snug"></span>
+            </div>
+
+            <!-- Legende unten links auf der Karte -->
+            <div class="absolute bottom-5 left-3 z-[500] bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl shadow-md px-3 py-2 text-xs flex flex-wrap items-center gap-3">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-3.5 h-3.5 rounded-sm bg-emerald-500/20 border-2 border-emerald-600 inline-block"></span>
+                    <span class="text-slate-700 font-medium">Suchkästchen</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-3 h-3 rounded-full bg-amber-500 border-2 border-white shadow-sm inline-block"></span>
+                    <span class="text-slate-700 font-medium">GBIF-Fundmeldung</span>
+                </div>
+            </div>
+
+            <!-- Lade-Overlay auf der Karte -->
+            <div id="map-loader" class="hidden absolute inset-0 bg-slate-900/20 backdrop-blur-[1px] z-[600] flex items-center justify-center">
+                <div class="bg-white rounded-2xl shadow-xl px-5 py-4 flex items-center gap-3 border border-slate-100">
+                    <svg class="animate-spin h-5 w-5 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-sm font-semibold text-slate-800">GBIF-Daten werden geladen...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rechte Seite: Ergebnisliste, Filter & Export -->
+        <section class="flex-1 flex flex-col bg-white h-full overflow-hidden">
+            
+            <!-- Ergebnis-Header & Export -->
+            <div class="p-4 border-b border-slate-200 bg-slate-50/70 shrink-0">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-base font-bold text-slate-900">Gefundene Beobachtungen</h2>
+                            <span id="results-count-badge" class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800">
+                                0 Treffer
+                            </span>
+                        </div>
+                        <p id="results-subtitle" class="text-xs text-slate-500 mt-0.5">
+                            Suche läuft...
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                    <button type="button" id="toggle-chart-btn" disabled aria-expanded="false"
+                        class="px-3.5 py-2 bg-white hover:bg-emerald-50 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-emerald-800 border border-emerald-300 disabled:border-slate-200 text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20V10m6 10V4m6 16v-7m4 7H2"></path></svg>
+                        <span id="toggle-chart-label">Phänologie-Grafik</span>
+                    </button>
+                    <!-- CSV Export Button -->
+                    <button 
+                        type="button" 
+                        id="export-csv-btn" 
+                        disabled
+                        class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        <span>CSV herunterladen</span>
+                    </button>
+                    </div>
+                </div>
+
+                <!-- Filter- & Sortierleiste innerhalb der Ergebnisse -->
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <div class="relative flex-1">
+                        <input 
+                            type="text" 
+                            id="filter-results-input" 
+                            placeholder="Ergebnisse filtern (z. B. Ortsteil, Quelle, Jahr)..."
+                            class="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                        />
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                        </svg>
+                    </div>
+                    <button type="button" id="enrich-all-btn" disabled title="Ruft für die aktuell gefilterten Funde (max. 50) Beobachter- und Ortsdetails über GBIF, den Nachweis-Link und OpenStreetMap ab"
+                        class="px-2.5 py-1.5 text-xs font-semibold bg-white hover:bg-sky-50 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-sky-800 border border-sky-300 disabled:border-slate-200 rounded-lg transition whitespace-nowrap">🔎 Details nachladen</button>
+                    <select id="sort-results-select" class="py-1.5 px-2.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-slate-700 font-medium">
+                        <option value="date-desc">Sortierung: Neueste zuerst</option>
+                        <option value="date-asc">Sortierung: Älteste zuerst</option>
+                        <option value="locality-asc">Sortierung: Fundort (A–Z)</option>
+                        <option value="source-asc">Sortierung: Datenquelle (A–Z)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Proxy-Einstellungen (optional) -->
+            <details class="shrink-0 border-b border-slate-200 bg-white px-4 py-2 text-xs">
+                <summary class="cursor-pointer font-semibold text-slate-600 select-none">⚙ Proxy für Nachweis-Seiten (optional, umgeht die CORS-Sperre)</summary>
+                <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                    <input id="proxy-url-input" type="text" value="http://127.0.0.1:8787" class="w-52 px-2 py-1 border border-slate-300 rounded-lg font-mono text-[11px] focus:ring-2 focus:ring-emerald-500 outline-none" />
+                    <label class="inline-flex items-center gap-1.5 text-slate-700"><input id="proxy-enabled" type="checkbox" class="accent-emerald-600" /> Proxy verwenden</label>
+                    <label class="inline-flex items-center gap-1.5 text-slate-700" title="Führt JavaScript der Seite in einem Headless-Browser aus (nötig für naturgucker/enjoynature.net)"><input id="proxy-render" type="checkbox" checked class="accent-emerald-600" /> Seite per Browser rendern</label>
+                    <button type="button" id="proxy-test-btn" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-semibold text-slate-700">Verbindung testen</button>
+                    <span id="proxy-status" class="text-[11px] text-slate-500"></span>
+                </div>
+                <p class="mt-1.5 text-[11px] text-slate-400 leading-snug">Start auf deinem Rechner: <span class="font-mono">python proxy_server.py</span> (für JavaScript-Seiten vorher <span class="font-mono">pip install playwright</span> und <span class="font-mono">python -m playwright install chromium</span>).</p>
+            </details>
+
+            <!-- Phänologie-Grafik (optional ein-/ausblendbar) -->
+            <div id="chart-panel" class="hidden shrink-0 border-b border-slate-200 bg-white px-4 py-3">
+                <div class="flex flex-wrap items-baseline justify-between gap-x-3">
+                    <h3 class="text-sm font-bold text-slate-900">Funde pro Kalenderwoche <span class="font-normal text-slate-500">(alle Jahre zusammengefasst)</span></h3>
+                    <span id="chart-info" class="text-[11px] text-slate-500"></span>
+                </div>
+                <div id="chart-legend" class="flex flex-wrap gap-1.5 mt-2"></div>
+                <div id="chart-svg-wrap" class="mt-2 w-full overflow-x-auto"></div>
+            </div>
+
+            <!-- Scrollbarer Ergebnisbereich -->
+            <div id="results-container" class="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-4 space-y-2.5 bg-slate-50/40">
+                <!-- Initialer Platzhalter -->
+                <div class="text-center py-12 text-slate-400 text-sm">
+                    Initialisiere Karte und lade Fundmeldungen von GBIF...
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        /**
+         * GBIF Artenfinder - Interaktive Webanwendung
+         * Nutzt Leaflet.js, OpenStreetMap Nominatim API und die offizielle GBIF Occurrence & Species API.
+         */
+
+        // --- Anwendungsstatus (State) ---
+        const state = {
+            centerLat: 52.3160, // Start: Sehnde, Region Hannover
+            centerLon: 9.9640,
+            radiusKm: 5,
+            bounds: null,       // L.LatLngBounds
+            speciesQuery: 'Vanessa cardui',
+            selectedTaxon: {
+                scientificName: 'Vanessa cardui',
+                vernacularName: 'Distelfalter',
+                rank: 'SPECIES',
+                taxonKey: null   // wird beim ersten Suchlauf per GBIF species/match aufgelöst
+            },
+            allOccurrences: [],
+            filteredOccurrences: [],
+            markersById: {},
+            isLoading: false,
+            mode: 'rect',          // 'rect' | 'poly'
+            rectBounds: null,
+            polygon: { pts: [], closed: false }
+        };
+
+        // --- DOM-Elemente ---
+        const speciesInput = document.getElementById('species-input');
+        const clearSpeciesBtn = document.getElementById('clear-species-btn');
+        const speciesSuggestions = document.getElementById('species-suggestions');
+        const selectedTaxonInfo = document.getElementById('selected-taxon-info');
+        const locationInput = document.getElementById('location-input');
+        const locationSearchBtn = document.getElementById('location-search-btn');
+        const radiusSelect = document.getElementById('radius-select');
+        const bboxSizeLabel = document.getElementById('bbox-size-label');
+        const bboxCoordsDisplay = document.getElementById('bbox-coords-display');
+        const searchGbifBtn = document.getElementById('search-gbif-btn');
+        const mapLoader = document.getElementById('map-loader');
+        const resultsContainer = document.getElementById('results-container');
+        const resultsCountBadge = document.getElementById('results-count-badge');
+        const resultsSubtitle = document.getElementById('results-subtitle');
+        const exportCsvBtn = document.getElementById('export-csv-btn');
+        const filterResultsInput = document.getElementById('filter-results-input');
+        const sortResultsSelect = document.getElementById('sort-results-select');
+
+        // --- Hilfsfunktion: Toast-Benachrichtigungen ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                info: 'bg-slate-800 text-white border-slate-700',
+                success: 'bg-emerald-700 text-white border-emerald-600',
+                warning: 'bg-amber-600 text-white border-amber-500',
+                error: 'bg-red-600 text-white border-red-500'
+            };
+            
+            toast.className = `pointer-events-auto px-4 py-2.5 rounded-xl shadow-lg border text-xs font-medium flex items-center gap-2 transition-all duration-300 transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        // --- Hilfsfunktion: In Zwischenablage kopieren (iFrame-sicher) ---
+        function copyToClipboard(text, label = 'Koordinaten') {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast(`${label} kopiert: ${text}`, 'success');
+            } catch (err) {
+                showToast('Kopieren fehlgeschlagen.', 'error');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // --- Karte initialisieren (Leaflet) ---
+        const map = L.map('map', {
+            center: [state.centerLat, state.centerLon],
+            zoom: 12,
+            zoomControl: true
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | Daten: <a href="https://www.gbif.org">GBIF.org</a>'
+        }).addTo(map);
+
+        // Layer-Gruppen für Suchkästchen und Fund-Marker
+        const bboxLayerGroup = L.layerGroup().addTo(map);
+        const markersLayerGroup = L.layerGroup().addTo(map);
+
+        let searchRectangle = null;
+        let handleNW = null;
+        let handleNE = null;
+        let handleSE = null;
+        let handleSW = null;
+        let handleCenter = null;
+
+        /**
+         * Berechnet eine Bounding Box (L.LatLngBounds) aus Mittelpunkt und Radius in km
+         */
+        function calculateBoundsFromCenter(lat, lon, radiusKm) {
+            const latDelta = radiusKm / 111.32;
+            const lonDelta = radiusKm / (111.32 * Math.cos(lat * Math.PI / 180));
+            const southWest = L.latLng(lat - latDelta, lon - lonDelta);
+            const northEast = L.latLng(lat + latDelta, lon + lonDelta);
+            return L.latLngBounds(southWest, northEast);
+        }
+
+        /**
+         * Berechnet die ungefähre Breite und Höhe der aktuellen Bounding Box in km
+         */
+        function getBoundsDimensionsKm(bounds) {
+            const center = bounds.getCenter();
+            const widthMeters = map.distance(
+                L.latLng(center.lat, bounds.getWest()),
+                L.latLng(center.lat, bounds.getEast())
+            );
+            const heightMeters = map.distance(
+                L.latLng(bounds.getSouth(), center.lng),
+                L.latLng(bounds.getNorth(), center.lng)
+            );
+            return {
+                widthKm: (widthMeters / 1000).toFixed(1),
+                heightKm: (heightMeters / 1000).toFixed(1)
+            };
+        }
+
+        /**
+         * Aktualisiert die UI-Anzeige für Bounding-Box-Koordinaten & Abmessungen
+         */
+        function updateBoundsInfoUI() {
+            if (!state.bounds) return;
+            const minLat = state.bounds.getSouth().toFixed(4);
+            const maxLat = state.bounds.getNorth().toFixed(4);
+            const minLon = state.bounds.getWest().toFixed(4);
+            const maxLon = state.bounds.getEast().toFixed(4);
+
+            bboxCoordsDisplay.textContent = `Lat: ${minLat}–${maxLat} | Lon: ${minLon}–${maxLon}`;
+            const dims = getBoundsDimensionsKm(state.bounds);
+            bboxSizeLabel.textContent = `ca. ${dims.widthKm} × ${dims.heightKm} km`;
+        }
+
+        /**
+         * Zeichnet oder aktualisiert das interaktive Such-Kästchen inklusive 4 Eck-Ziehpunkten & Mittelpunkt
+         */
+        function renderInteractiveBoundingBox(bounds, triggerSearch = false) {
+            state.bounds = bounds;
+            updateBoundsInfoUI();
+
+            const nw = bounds.getNorthWest();
+            const ne = bounds.getNorthEast();
+            const se = bounds.getSouthEast();
+            const sw = bounds.getSouthWest();
+            const center = bounds.getCenter();
+
+            if (!searchRectangle) {
+                searchRectangle = L.rectangle(bounds, {
+                    color: '#059669',
+                    weight: 2.5,
+                    fillColor: '#10b981',
+                    fillOpacity: 0.14,
+                    dashArray: '6, 4'
+                }).addTo(bboxLayerGroup);
+
+                const cornerIcon = (extraClass = '') => L.divIcon({
+                    className: `bbox-handle ${extraClass}`,
+                    iconSize: [14, 14],
+                    iconAnchor: [7, 7]
+                });
+
+                const centerIcon = L.divIcon({
+                    className: 'bbox-move-handle',
+                    html: '✥',
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
+                });
+
+                handleNW = L.marker(nw, { draggable: true, icon: cornerIcon(), title: 'Ecke ziehen zum Anpassen' }).addTo(bboxLayerGroup);
+                handleNE = L.marker(ne, { draggable: true, icon: cornerIcon('bbox-handle-ne-sw'), title: 'Ecke ziehen zum Anpassen' }).addTo(bboxLayerGroup);
+                handleSE = L.marker(se, { draggable: true, icon: cornerIcon(), title: 'Ecke ziehen zum Anpassen' }).addTo(bboxLayerGroup);
+                handleSW = L.marker(sw, { draggable: true, icon: cornerIcon('bbox-handle-ne-sw'), title: 'Ecke ziehen zum Anpassen' }).addTo(bboxLayerGroup);
+                handleCenter = L.marker(center, { draggable: true, icon: centerIcon, title: 'Kästchen verschieben' }).addTo(bboxLayerGroup);
+
+                // Drag-Events für die 4 Eckpunkte
+                handleNW.on('drag', (e) => {
+                    const newBounds = L.latLngBounds(e.target.getLatLng(), searchRectangle.getBounds().getSouthEast());
+                    syncHandlesToBounds(newBounds);
+                });
+                handleNE.on('drag', (e) => {
+                    const newBounds = L.latLngBounds(e.target.getLatLng(), searchRectangle.getBounds().getSouthWest());
+                    syncHandlesToBounds(newBounds);
+                });
+                handleSE.on('drag', (e) => {
+                    const newBounds = L.latLngBounds(e.target.getLatLng(), searchRectangle.getBounds().getNorthWest());
+                    syncHandlesToBounds(newBounds);
+                });
+                handleSW.on('drag', (e) => {
+                    const newBounds = L.latLngBounds(e.target.getLatLng(), searchRectangle.getBounds().getNorthEast());
+                    syncHandlesToBounds(newBounds);
+                });
+
+                // Drag-Event für den Mittelpunkt (verschiebt das gesamte Rechteck)
+                let dragStartCenter = null;
+                let dragStartBounds = null;
+                handleCenter.on('dragstart', () => {
+                    dragStartCenter = handleCenter.getLatLng();
+                    dragStartBounds = searchRectangle.getBounds();
+                });
+                handleCenter.on('drag', (e) => {
+                    const currentPos = e.target.getLatLng();
+                    const dLat = currentPos.lat - dragStartCenter.lat;
+                    const dLng = currentPos.lng - dragStartCenter.lng;
+                    const movedBounds = L.latLngBounds(
+                        [dragStartBounds.getSouth() + dLat, dragStartBounds.getWest() + dLng],
+                        [dragStartBounds.getNorth() + dLat, dragStartBounds.getEast() + dLng]
+                    );
+                    syncHandlesToBounds(movedBounds);
+                });
+
+                // Nach Loslassen eines Ziehpunkts automatisch GBIF-Suche starten
+                [handleNW, handleNE, handleSE, handleSW].forEach(h => {
+                    h.on('dragend', () => {
+                        radiusSelect.value = 'custom';
+                        fetchGbifOccurrences();
+                    });
+                });
+                handleCenter.on('dragend', () => {
+                    const c = state.bounds.getCenter();
+                    state.centerLat = c.lat;
+                    state.centerLon = c.lng;
+                    fetchGbifOccurrences();
+                });
+
+            } else {
+                syncHandlesToBounds(bounds);
+            }
+
+            if (triggerSearch) {
+                fetchGbifOccurrences();
+            }
+        }
+
+        function syncHandlesToBounds(bounds) {
+            state.bounds = bounds;
+            searchRectangle.setBounds(bounds);
+            handleNW.setLatLng(bounds.getNorthWest());
+            handleNE.setLatLng(bounds.getNorthEast());
+            handleSE.setLatLng(bounds.getSouthEast());
+            handleSW.setLatLng(bounds.getSouthWest());
+            handleCenter.setLatLng(bounds.getCenter());
+            updateBoundsInfoUI();
+        }
+
+        // =====================================================================
+        // Freie Fläche (Polygon) statt Rechteck
+        // =====================================================================
+        const polyLayerGroup = L.layerGroup();
+        let polyShape = null;       // L.polygon (geschlossen) oder L.polyline (im Zeichnen)
+        const modePanel = document.getElementById('mode-panel');
+        const modeRectBtn = document.getElementById('mode-rect-btn');
+        const modePolyBtn = document.getElementById('mode-poly-btn');
+        const polyActions = document.getElementById('poly-actions');
+        const polyHint = document.getElementById('poly-hint');
+        L.DomEvent.disableClickPropagation(modePanel);
+        L.DomEvent.disableScrollPropagation(modePanel);
+
+        function polygonAreaKm2(pts) {
+            if (pts.length < 3) return 0;
+            const lat0 = pts.reduce((a, p) => a + p.lat, 0) / pts.length;
+            const lon0 = pts.reduce((a, p) => a + p.lng, 0) / pts.length;
+            const kx = 111.32 * Math.cos(lat0 * Math.PI / 180), ky = 111.32;
+            let sum = 0;
+            for (let i = 0; i < pts.length; i++) {
+                const a = pts[i], b = pts[(i + 1) % pts.length];
+                sum += ((a.lng - lon0) * kx) * ((b.lat - lat0) * ky) - ((b.lng - lon0) * kx) * ((a.lat - lat0) * ky);
+            }
+            return Math.abs(sum) / 2;
+        }
+
+        function pointInPolygon(lat, lon, pts) {
+            let inside = false;
+            for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+                const xi = pts[i].lng, yi = pts[i].lat, xj = pts[j].lng, yj = pts[j].lat;
+                if (((yi > lat) !== (yj > lat)) && (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
+            }
+            return inside;
+        }
+
+        function segmentsCross(a, b, c, d) {
+            const o = (p, q, r) => (q.lng - p.lng) * (r.lat - p.lat) - (q.lat - p.lat) * (r.lng - p.lng);
+            return (o(a, b, c) * o(a, b, d) < 0) && (o(c, d, a) * o(c, d, b) < 0);
+        }
+        function polygonSelfIntersects(pts) {
+            const n = pts.length;
+            for (let i = 0; i < n; i++) {
+                for (let j = i + 1; j < n; j++) {
+                    if (Math.abs(i - j) === 1 || (i === 0 && j === n - 1)) continue;
+                    if (segmentsCross(pts[i], pts[(i + 1) % n], pts[j], pts[(j + 1) % n])) return true;
+                }
+            }
+            return false;
+        }
+
+        /** WKT für die GBIF-Suche; GBIF verlangt den äußeren Ring gegen den Uhrzeigersinn */
+        function polygonWkt(pts) {
+            let ring = pts.map(p => ({ lat: p.lat, lng: p.lng }));
+            let signed = 0;
+            for (let i = 0; i < ring.length; i++) {
+                const a = ring[i], b = ring[(i + 1) % ring.length];
+                signed += a.lng * b.lat - b.lng * a.lat;
+            }
+            if (signed < 0) ring.reverse();
+            ring.push(ring[0]);
+            return `POLYGON((${ring.map(p => `${p.lng.toFixed(6)} ${p.lat.toFixed(6)}`).join(', ')}))`;
+        }
+
+        function setModeButtons() {
+            const on = 'bg-emerald-600 text-white border-emerald-600';
+            const off = 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50';
+            modeRectBtn.className = 'px-2.5 py-1 rounded-lg font-semibold border transition ' + (state.mode === 'rect' ? on : off);
+            modePolyBtn.className = 'px-2.5 py-1 rounded-lg font-semibold border transition ' + (state.mode === 'poly' ? on : off);
+            polyActions.classList.toggle('hidden', state.mode !== 'poly');
+            polyHint.classList.toggle('hidden', state.mode !== 'poly');
+            radiusSelect.disabled = state.mode === 'poly';
+            radiusSelect.classList.toggle('opacity-50', state.mode === 'poly');
+        }
+
+        function updatePolyInfoUI() {
+            const pg = state.polygon;
+            const n = pg.pts.length;
+            if (pg.closed && n >= 3) {
+                const b = L.latLngBounds(pg.pts);
+                state.bounds = b;
+                bboxSizeLabel.textContent = `Fläche: ${n} Ecken, ca. ${polygonAreaKm2(pg.pts).toFixed(1)} km²`;
+                bboxCoordsDisplay.textContent = `Lat: ${b.getSouth().toFixed(4)}–${b.getNorth().toFixed(4)} | Lon: ${b.getWest().toFixed(4)}–${b.getEast().toFixed(4)}`;
+                polyHint.textContent = 'Ecken ziehen · weiße Punkte auf den Kanten anklicken = neue Ecke · Rechtsklick/langer Druck auf Ecke = löschen';
+            } else {
+                bboxSizeLabel.textContent = `Fläche: ${n} Punkt${n === 1 ? '' : 'e'}`;
+                bboxCoordsDisplay.textContent = 'Klicke auf die Karte, um Eckpunkte zu setzen';
+                polyHint.textContent = n < 3
+                    ? 'Klicke auf die Karte, um Eckpunkte zu setzen (mind. 3).'
+                    : 'Weitere Punkte setzen oder auf den orangen Startpunkt klicken bzw. „Schließen & suchen“.';
+            }
+        }
+
+        function redrawPolygon() {
+            polyLayerGroup.clearLayers();
+            polyShape = null;
+            const pg = state.polygon;
+            const pts = pg.pts;
+            const style = { color: '#059669', weight: 2.5, fillColor: '#10b981', fillOpacity: 0.14, dashArray: '6, 4' };
+
+            if (pts.length >= 2) {
+                polyShape = pg.closed && pts.length >= 3 ? L.polygon(pts, style) : L.polyline(pts, style);
+                polyShape.addTo(polyLayerGroup);
+            }
+
+            pts.forEach((pt, i) => {
+                const icon = L.divIcon({
+                    className: 'bbox-handle poly-handle' + (i === 0 && !pg.closed ? ' poly-handle-first' : ''),
+                    iconSize: [14, 14], iconAnchor: [7, 7]
+                });
+                const m = L.marker(pt, { draggable: true, icon, title: i === 0 && !pg.closed ? 'Startpunkt – klicken zum Schließen' : 'Ecke ziehen (Rechtsklick = löschen)' }).addTo(polyLayerGroup);
+
+                m.on('drag', e => {
+                    pts[i] = e.target.getLatLng();
+                    if (polyShape) polyShape.setLatLngs(pts);
+                });
+                m.on('dragend', () => {
+                    redrawPolygon();
+                    updatePolyInfoUI();
+                    if (pg.closed) searchPolygon();
+                });
+                m.on('click', () => {
+                    if (!pg.closed && i === 0 && pts.length >= 3) closePolygon();
+                });
+                m.on('contextmenu', () => removeVertex(i));
+            });
+
+            // Mittelpunkte der Kanten: Klick fügt eine neue Ecke ein
+            if (pg.closed && pts.length >= 3) {
+                for (let i = 0; i < pts.length; i++) {
+                    const a = pts[i], b = pts[(i + 1) % pts.length];
+                    const mid = L.latLng((a.lat + b.lat) / 2, (a.lng + b.lng) / 2);
+                    const mm = L.marker(mid, {
+                        icon: L.divIcon({ className: 'poly-mid', iconSize: [10, 10], iconAnchor: [5, 5] }),
+                        title: 'Neue Ecke einfügen', keyboard: false
+                    }).addTo(polyLayerGroup);
+                    mm.on('click', () => {
+                        pts.splice(i + 1, 0, mid);
+                        redrawPolygon();
+                        updatePolyInfoUI();
+                    });
+                }
+            }
+        }
+
+        function removeVertex(i) {
+            const pg = state.polygon;
+            if (pg.closed && pg.pts.length <= 3) { showToast('Eine Fläche braucht mindestens 3 Ecken.', 'warning'); return; }
+            pg.pts.splice(i, 1);
+            redrawPolygon();
+            updatePolyInfoUI();
+            if (pg.closed) searchPolygon();
+        }
+
+        function closePolygon() {
+            const pg = state.polygon;
+            if (pg.pts.length < 3) { showToast('Bitte mindestens 3 Punkte setzen.', 'warning'); return; }
+            pg.closed = true;
+            redrawPolygon();
+            updatePolyInfoUI();
+            map.fitBounds(L.latLngBounds(pg.pts), { padding: [40, 40] });
+            searchPolygon();
+        }
+
+        function searchPolygon() {
+            const pg = state.polygon;
+            if (!pg.closed) return;
+            if (polygonSelfIntersects(pg.pts)) {
+                showToast('Die Kanten überschneiden sich – bitte Ecken so verschieben, dass sich die Fläche nicht kreuzt.', 'warning');
+                return;
+            }
+            fetchGbifOccurrences();
+        }
+
+        function resetPolygon() {
+            state.polygon = { pts: [], closed: false };
+            redrawPolygon();
+            updatePolyInfoUI();
+        }
+
+        function setMode(mode) {
+            if (mode === state.mode) return;
+            if (mode === 'poly') {
+                state.rectBounds = state.bounds;
+                state.mode = 'poly';
+                map.removeLayer(bboxLayerGroup);
+                polyLayerGroup.addTo(map);
+                map.getContainer().style.cursor = 'crosshair';
+                redrawPolygon();
+                updatePolyInfoUI();
+            } else {
+                state.mode = 'rect';
+                map.removeLayer(polyLayerGroup);
+                bboxLayerGroup.addTo(map);
+                map.getContainer().style.cursor = '';
+                if (state.rectBounds) { state.bounds = state.rectBounds; updateBoundsInfoUI(); }
+                fetchGbifOccurrences();
+            }
+            setModeButtons();
+        }
+
+        modeRectBtn.addEventListener('click', () => setMode('rect'));
+        modePolyBtn.addEventListener('click', () => setMode('poly'));
+        document.getElementById('poly-close-btn').addEventListener('click', closePolygon);
+        document.getElementById('poly-clear-btn').addEventListener('click', resetPolygon);
+        document.getElementById('poly-undo-btn').addEventListener('click', () => {
+            const pg = state.polygon;
+            if (pg.closed) { pg.closed = false; } else { pg.pts.pop(); }
+            redrawPolygon();
+            updatePolyInfoUI();
+        });
+        setModeButtons();
+
+        // Klick direkt auf die Karte: Rechteck neu setzen ODER Polygon-Punkt hinzufügen
+        map.on('click', (e) => {
+            if (state.mode === 'poly') {
+                if (state.polygon.closed) return;   // geschlossene Fläche: nur Ecken bearbeiten
+                state.polygon.pts.push(e.latlng);
+                redrawPolygon();
+                updatePolyInfoUI();
+                return;
+            }
+            state.centerLat = e.latlng.lat;
+            state.centerLon = e.latlng.lng;
+            if (radiusSelect.value === 'custom') {
+                radiusSelect.value = '5';
+                state.radiusKm = 5;
+            }
+            const newBounds = calculateBoundsFromCenter(state.centerLat, state.centerLon, state.radiusKm);
+            renderInteractiveBoundingBox(newBounds, true);
+        });
+
+        // Radius-Auswahl geändert
+        radiusSelect.addEventListener('change', () => {
+            const val = parseFloat(radiusSelect.value);
+            if (!isNaN(val)) {
+                state.radiusKm = val;
+                const center = state.bounds ? state.bounds.getCenter() : L.latLng(state.centerLat, state.centerLon);
+                const newBounds = calculateBoundsFromCenter(center.lat, center.lng, state.radiusKm);
+                renderInteractiveBoundingBox(newBounds, true);
+            }
+        });
+
+        // --- GBIF Species Autocomplete (Suggest API) ---
+        let suggestTimeout = null;
+
+        speciesInput.addEventListener('input', () => {
+            const q = speciesInput.value.trim();
+            clearSpeciesBtn.classList.toggle('hidden', q.length === 0);
+
+            // Freitext-Suche vorbereiten, falls kein Dropdown-Eintrag gewählt wird
+            state.selectedTaxon = {
+                scientificName: q,
+                vernacularName: '',
+                taxonKey: null
+            };
+            selectedTaxonInfo.innerHTML = q
+                ? `Suchbegriff: <span class="font-semibold">${escapeHtml(q)}</span> (Enter oder Klick auf Vorschlag)`
+                : `<span class="text-amber-600">Bitte einen Artnamen eingeben</span>`;
+
+            clearTimeout(suggestTimeout);
+            if (q.length < 2) {
+                speciesSuggestions.classList.add('hidden');
+                return;
+            }
+
+            suggestTimeout = setTimeout(() => fetchSpeciesSuggestions(q), 280);
+        });
+
+        speciesInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                speciesSuggestions.classList.add('hidden');
+                fetchGbifOccurrences();
+            }
+        });
+
+        clearSpeciesBtn.addEventListener('click', () => {
+            speciesInput.value = '';
+            clearSpeciesBtn.classList.add('hidden');
+            speciesSuggestions.classList.add('hidden');
+            speciesInput.focus();
+        });
+
+        // Dropdown schließen bei Klick außerhalb
+        document.addEventListener('click', (e) => {
+            if (!speciesInput.contains(e.target) && !speciesSuggestions.contains(e.target)) {
+                speciesSuggestions.classList.add('hidden');
+            }
+        });
+
+        async function fetchSpeciesSuggestions(query) {
+            try {
+                // Parallel GBIF Suggest (wissenschaftlich) und Vernacular Search (deutsche Trivialnamen) abfragen
+                const [suggestRes, searchRes] = await Promise.all([
+                    fetch(`https://api.gbif.org/v1/species/suggest?q=${encodeURIComponent(query)}&limit=8`),
+                    fetch(`https://api.gbif.org/v1/species/search?q=${encodeURIComponent(query)}&qField=VERNACULAR&datasetKey=d7dddbf4-2cf0-4f39-9b2a-bb099caae36c&status=ACCEPTED&limit=8`)
+                ]);
+
+                const suggestData = suggestRes.ok ? await suggestRes.json() : [];
+                const searchData = searchRes.ok ? await searchRes.json() : { results: [] };
+
+                const combined = [];
+                const seenKeys = new Set();
+
+                // Zuerst Treffer über Trivialnamen (z. B. "Tagpfauenauge") einsortieren
+                for (const item of (searchData.results || [])) {
+                    const key = item.nubKey || item.key;
+                    if (key && !seenKeys.has(key) && item.canonicalName) {
+                        seenKeys.add(key);
+                        const deName = (item.vernacularNames || []).find(v => v.language === 'deu')?.vernacularName || '';
+                        combined.push({
+                            taxonKey: key,
+                            scientificName: item.canonicalName,
+                            authorship: item.authorship || '',
+                            vernacularName: deName,
+                            rank: item.rank || 'SPECIES'
+                        });
+                    }
+                }
+
+                // Dann direkte wissenschaftliche Vorschläge ergänzen
+                for (const item of suggestData) {
+                    const key = item.nubKey || item.key;
+                    if (key && !seenKeys.has(key) && item.canonicalName) {
+                        seenKeys.add(key);
+                        combined.push({
+                            taxonKey: key,
+                            scientificName: item.canonicalName,
+                            authorship: item.authorship || '',
+                            vernacularName: item.vernacularName || '',
+                            rank: item.rank || ''
+                        });
+                    }
+                }
+
+                // Unscharfe Treffer (z. B. Tippfehler wie "Peride" -> Pieridae)
+                try {
+                    const mRes = await fetch(`https://api.gbif.org/v1/species/match?name=${encodeURIComponent(query)}&verbose=true`);
+                    if (mRes.ok) {
+                        const m = await mRes.json();
+                        const cands = [];
+                        if (m.usageKey && m.matchType !== 'NONE') cands.push(m);
+                        (m.alternatives || []).forEach(a => cands.push(a));
+                        for (const c of cands) {
+                            const key = c.usageKey;
+                            if (!key || seenKeys.has(key) || !c.canonicalName) continue;
+                            if (['KINGDOM', 'PHYLUM', 'CLASS'].includes(c.rank)) continue;
+                            if (c.status && c.status !== 'ACCEPTED') continue;
+                            seenKeys.add(key);
+                            combined.push({ taxonKey: key, scientificName: c.canonicalName, authorship: '', vernacularName: '', rank: c.rank || '', fuzzy: true });
+                        }
+                    }
+                } catch (_) {}
+
+                // Höhere Rangstufen (Familie, Gattung ...) vor Arten nach vorn, wenn der Suchtext genau passt
+                const ql = query.toLowerCase();
+                combined.sort((x, y) => (y.scientificName.toLowerCase() === ql) - (x.scientificName.toLowerCase() === ql));
+
+                renderSpeciesSuggestions(combined.slice(0, 12));
+            } catch (err) {
+                console.error('Fehler bei Artvorschlägen:', err);
+            }
+        }
+
+        function renderSpeciesSuggestions(items) {
+            if (!items.length) {
+                speciesSuggestions.classList.add('hidden');
+                return;
+            }
+
+            speciesSuggestions.innerHTML = items.map(item => `
+                <li class="px-3.5 py-2 hover:bg-emerald-50 cursor-pointer transition flex items-center justify-between gap-2"
+                    onclick="chooseTaxon(${item.taxonKey}, '${escapeAttr(item.scientificName)}', '${escapeAttr(item.vernacularName)}', '${escapeAttr(item.rank)}')">
+                    <div class="min-w-0">
+                        <div class="text-sm font-semibold text-slate-900 truncate">
+                            <span class="italic">${escapeHtml(item.scientificName)}</span>
+                            ${item.vernacularName ? `<span class="font-normal text-emerald-700 ml-1">(${escapeHtml(item.vernacularName)})</span>` : ''}
+                        </div>
+                        <div class="text-[11px] text-slate-400 truncate">
+                            ${escapeHtml(rankLabel(item.rank))} · Taxon-ID: ${item.taxonKey}${item.fuzzy ? ' · ähnlicher Treffer' : ''}
+                        </div>
+                    </div>
+                    <span class="text-xs text-emerald-600 font-medium shrink-0">Auswählen →</span>
+                </li>
+            `).join('');
+
+            speciesSuggestions.classList.remove('hidden');
+        }
+
+        window.chooseTaxon = function(taxonKey, scientificName, vernacularName, rank) {
+            speciesInput.value = scientificName;
+            clearSpeciesBtn.classList.remove('hidden');
+            speciesSuggestions.classList.add('hidden');
+
+            state.selectedTaxon = {
+                taxonKey,
+                scientificName,
+                vernacularName,
+                rank: rank || ''
+            };
+
+            const deText = vernacularName ? ` (${escapeHtml(vernacularName)})` : '';
+            const rk = rank ? ` · ${escapeHtml(rankLabel(rank))}${isHigherRank(rank) ? ' (inkl. aller Arten darunter)' : ''}` : '';
+            selectedTaxonInfo.innerHTML = `Gewählt: <span class="font-semibold italic">${escapeHtml(scientificName)}</span>${deText}${rk}${taxonKey ? ' · Taxon-ID: ' + taxonKey : ''}`;
+            fetchGbifOccurrences();
+        };
+
+        // --- Ortssuche via Nominatim OpenStreetMap API ---
+        async function searchLocation() {
+            const query = locationInput.value.trim();
+            if (!query) {
+                showToast('Bitte einen Ortsnamen eingeben.', 'warning');
+                return;
+            }
+
+            locationSearchBtn.disabled = true;
+            locationSearchBtn.textContent = '...';
+
+            try {
+                const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=de&q=${encodeURIComponent(query)}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Geocoding-Fehler');
+
+                const results = await response.json();
+                if (!results || results.length === 0) {
+                    showToast(`Ort "${query}" konnte nicht gefunden werden.`, 'warning');
+                    return;
+                }
+
+                const place = results[0];
+                const lat = parseFloat(place.lat);
+                const lon = parseFloat(place.lon);
+
+                if (state.mode === 'poly') {
+                    map.setView([lat, lon], 14);
+                    showToast(`Ort gefunden: ${place.display_name.split(',')[0]} – jetzt Fläche zeichnen`, 'info');
+                    return;
+                }
+
+                state.centerLat = lat;
+                state.centerLon = lon;
+
+                if (radiusSelect.value === 'custom') {
+                    radiusSelect.value = '5';
+                    state.radiusKm = 5;
+                }
+
+                const newBounds = calculateBoundsFromCenter(lat, lon, state.radiusKm);
+                renderInteractiveBoundingBox(newBounds, false);
+                map.fitBounds(newBounds, { padding: [50, 50] });
+
+                showToast(`Ort gefunden: ${place.display_name.split(',')[0]}`, 'info');
+                fetchGbifOccurrences();
+            } catch (err) {
+                console.error(err);
+                showToast('Fehler bei der Ortssuche. Bitte erneut versuchen.', 'error');
+            } finally {
+                locationSearchBtn.disabled = false;
+                locationSearchBtn.textContent = 'Ort finden';
+            }
+        }
+
+        locationSearchBtn.addEventListener('click', searchLocation);
+        locationInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchLocation();
+            }
+        });
+
+        // --- GBIF Occurrence API Abfrage ---
+        async function fetchGbifOccurrences() {
+            if (state.mode === 'poly' && !(state.polygon.closed && state.polygon.pts.length >= 3)) {
+                showToast('Bitte zuerst die Fläche zeichnen und schließen.', 'warning');
+                return;
+            }
+            if (!state.bounds) return;
+
+            const rawInput = speciesInput.value.trim();
+            if (!rawInput && !state.selectedTaxon.taxonKey) {
+                showToast('Bitte zuerst eine Art oder Familie eingeben.', 'warning');
+                return;
+            }
+
+            setLoading(true);
+            markersLayerGroup.clearLayers();
+            state.markersById = {};
+            state.allOccurrences = [];
+
+            const minLat = state.bounds.getSouth().toFixed(6);
+            const maxLat = state.bounds.getNorth().toFixed(6);
+            const minLon = state.bounds.getWest().toFixed(6);
+            const maxLon = state.bounds.getEast().toFixed(6);
+
+            try {
+                // Falls kein TaxonKey vorhanden ist, versuchen wir zuerst einen exakten Taxon-Match (unterstützt auch deutsche Namen!)
+                let taxonKeyToUse = state.selectedTaxon.taxonKey;
+                let resolvedVernacular = state.selectedTaxon.vernacularName || '';
+
+                if (!taxonKeyToUse && rawInput) {
+                    try {
+                        const matchRes = await fetch(`https://api.gbif.org/v1/species/match?name=${encodeURIComponent(rawInput)}`);
+                        if (matchRes.ok) {
+                            const matchData = await matchRes.json();
+                            const tooHigh = ['KINGDOM', 'PHYLUM', 'CLASS'].includes(matchData.rank);
+                            if (matchData.usageKey && matchData.matchType !== 'NONE' && !(matchData.matchType === 'HIGHERRANK' && tooHigh)) {
+                                taxonKeyToUse = matchData.usageKey;
+                                state.selectedTaxon.taxonKey = matchData.usageKey;
+                                state.selectedTaxon.scientificName = matchData.canonicalName || matchData.scientificName || rawInput;
+                                state.selectedTaxon.rank = matchData.rank || '';
+                                const fz = matchData.matchType === 'FUZZY' ? ' · <span class="text-amber-600">ähnlicher Treffer – bitte prüfen</span>' : '';
+                                selectedTaxonInfo.innerHTML = `Erkanntes Taxon: <span class="font-semibold italic">${escapeHtml(state.selectedTaxon.scientificName)}</span> · ${escapeHtml(rankLabel(matchData.rank))}${isHigherRank(matchData.rank) ? ' (inkl. aller Arten darunter)' : ''} · Taxon-ID: ${taxonKeyToUse}${fz}`;
+                            }
+                        }
+                    } catch (_) {
+                        // Fallback auf scientificName Parameter
+                    }
+                }
+
+                // Bis zu 1000 Datensätze in Seiten à 300 abrufen
+                const limit = 300;
+                const maxRecords = 1000;
+                let offset = 0;
+                let totalAvailable = 0;
+
+                while (offset < maxRecords) {
+                    const params = new URLSearchParams({
+                        hasCoordinate: 'true',
+                        limit: limit.toString(),
+                        offset: offset.toString()
+                    });
+                    if (state.mode === 'poly') {
+                        params.append('geometry', polygonWkt(state.polygon.pts));
+                    } else {
+                        params.append('decimalLatitude', `${minLat},${maxLat}`);
+                        params.append('decimalLongitude', `${minLon},${maxLon}`);
+                    }
+
+                    if (taxonKeyToUse) {
+                        params.append('taxonKey', taxonKeyToUse.toString());
+                    } else {
+                        params.append('scientificName', rawInput);
+                    }
+
+                    const response = await fetch(`https://api.gbif.org/v1/occurrence/search?${params.toString()}`);
+                    if (!response.ok) {
+                        throw new Error(`GBIF API Status ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    totalAvailable = data.count || 0;
+                    const batch = data.results || [];
+
+                    for (const rec of batch) {
+                        if (state.mode === 'poly' && typeof rec.decimalLatitude === 'number' && typeof rec.decimalLongitude === 'number'
+                            && !pointInPolygon(rec.decimalLatitude, rec.decimalLongitude, state.polygon.pts)) continue;
+                        state.allOccurrences.push(normalizeOccurrence(rec, resolvedVernacular));
+                    }
+
+                    if (data.endOfRecords || batch.length === 0) {
+                        break;
+                    }
+                    offset += limit;
+                }
+
+                // Ergebnis-Header aktualisieren
+                const countText = totalAvailable > state.allOccurrences.length
+                    ? `${state.allOccurrences.length} von ${totalAvailable} Treffern`
+                    : `${state.allOccurrences.length} Treffer`;
+                resultsCountBadge.textContent = countText;
+
+                const speciesDisplay = state.selectedTaxon.scientificName || rawInput;
+                resultsSubtitle.textContent = `${rankLabel(state.selectedTaxon.rank)}: ${speciesDisplay} · Suchbereich: ${state.mode === 'poly' ? `frei gezeichnete Fläche (${state.polygon.pts.length} Ecken, ca. ${polygonAreaKm2(state.polygon.pts).toFixed(1)} km²)` : `${minLat}–${maxLat}° N, ${minLon}–${maxLon}° E`}`;
+
+                exportCsvBtn.disabled = state.allOccurrences.length === 0;
+
+                // Marker auf der Karte zeichnen & Liste rendern
+                renderMapMarkers(state.allOccurrences);
+                applyFilterAndSort();
+
+                if (state.allOccurrences.length === 0) {
+                    showToast('Keine Fundmeldungen in diesem Kästchen gefunden.', 'info');
+                }
+            } catch (err) {
+                console.error('Fehler beim Laden der GBIF-Daten:', err);
+                showToast(state.mode === 'poly' && /Status 400/.test(err.message || '')
+                    ? 'GBIF lehnt die Fläche ab (zu komplex oder Kanten überschneiden sich).'
+                    : 'Fehler beim Abrufen der GBIF-Daten.', 'error');
+                resultsContainer.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+                        <p class="text-sm font-semibold text-red-800 mb-1">Verbindungsfehler zur GBIF-Datenbank</p>
+                        <p class="text-xs text-red-600">Bitte überprüfe deine Internetverbindung oder versuche es in einem Moment erneut.</p>
+                    </div>
+                `;
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        /**
+         * Bereitet einen rohen GBIF-Datensatz einheitlich für Liste, Karte und CSV auf
+         */
+        function normalizeOccurrence(rec, fallbackVernacular = '') {
+            const sciName = rec.species || rec.scientificName || 'Unbekannte Art';
+            const vernName = rec.vernacularName || (sciName === state.selectedTaxon.scientificName ? fallbackVernacular : '') || '';
+            
+            // Fundort sinnvoll zusammensetzen
+            const locationParts = [
+                rec.locality,
+                rec.municipality,
+                rec.county,
+                rec.stateProvince
+            ].filter(Boolean);
+            // Doppelte Begriffe entfernen (z. B. wenn locality == municipality)
+            const uniqueLocParts = [...new Set(locationParts)];
+            const locationText = uniqueLocParts.length > 0
+                ? uniqueLocParts.join(', ')
+                : (rec.country || 'Koordinaten-Fund (ohne Ortsbeschreibung)');
+
+            const lat = typeof rec.decimalLatitude === 'number' ? rec.decimalLatitude : null;
+            const lon = typeof rec.decimalLongitude === 'number' ? rec.decimalLongitude : null;
+
+            // Datum formatieren
+            let dateFormatted = 'Datum unbekannt';
+            let timestamp = 0;
+            if (rec.eventDate) {
+                const d = new Date(rec.eventDate);
+                if (!isNaN(d.getTime())) {
+                    timestamp = d.getTime();
+                    dateFormatted = d.toLocaleDateString('de-DE', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                } else {
+                    dateFormatted = rec.eventDate.split('T')[0];
+                }
+            } else if (rec.year) {
+                dateFormatted = rec.month ? `${String(rec.month).padStart(2, '0')}/${rec.year}` : `${rec.year}`;
+                timestamp = new Date(rec.year, (rec.month || 1) - 1, rec.day || 1).getTime();
+            }
+
+            // Belegbild prüfen
+            const mediaItem = Array.isArray(rec.media) ? rec.media.find(m => m.identifier && m.type === 'StillImage') : null;
+
+            // Datumsbestandteile & Kalenderwoche
+            let yr = rec.year, mo = rec.month, dy = rec.day;
+            if ((!yr || !mo || !dy) && typeof rec.eventDate === 'string') {
+                const mm = rec.eventDate.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T|\s)/);
+                if (mm) { yr = +mm[1]; mo = +mm[2]; dy = +mm[3]; }
+            }
+            const isoWeek = (yr && mo && dy) ? isoWeekNumber(yr, mo, dy) : null;
+            const isoDate = (yr && mo && dy) ? `${yr}-${String(mo).padStart(2, '0')}-${String(dy).padStart(2, '0')}` : '';
+            const stageKey = classifyLifeStage(rec.lifeStage);
+            const stageLabel = (STAGES.find(x => x.key === stageKey) || {}).label || '';
+
+            // MTB / Quadrant / Minutenfeld
+            const mtb = (lat !== null && lon !== null) ? calcMtb(lat, lon) : null;
+            const uncertainty = rec.coordinateUncertaintyInMeters || null;
+            const mtbUncertain = !!(mtb && uncertainty && uncertainty > 1000);
+
+            // Link zum Original-Nachweis (z. B. iNaturalist, observation.org, naturgucker ...)
+            let proofUrl = '';
+            const isNaturgucker = /naturgucker/i.test([rec.institutionCode, rec.institutionID, rec.datasetName, rec.collectionCode, rec.occurrenceID, rec.references].filter(x => typeof x === 'string').join(' '));
+            const proofCandidates = isNaturgucker ? [rec.references, rec.occurrenceID] : [rec.occurrenceID, rec.references];
+            for (const cand of proofCandidates) {
+                if (typeof cand === 'string' && /^https?:\/\//i.test(cand.trim())) {
+                    proofUrl = cand.trim();
+                    break;
+                }
+            }
+            const sourceParts = [rec.references, rec.occurrenceID]
+                .filter(x => typeof x === 'string' && x.trim())
+                .map(x => x.trim());
+            const sourceList = [...new Set(sourceParts)];
+
+            let proofHost = '';
+            try { proofHost = proofUrl ? new URL(proofUrl).hostname.replace(/^www\./, '') : ''; } catch (_) {}
+
+            return {
+                gbifID: rec.gbifID,
+                scientificName: sciName,
+                vernacularName: vernName,
+                location: locationText,
+                locality: rec.locality || '',
+                municipality: rec.municipality || '',
+                stateProvince: rec.stateProvince || '',
+                lat,
+                lon,
+                latStr: lat !== null ? lat.toFixed(5) : '',
+                lonStr: lon !== null ? lon.toFixed(5) : '',
+                latDms: lat !== null ? formatDms(lat, 'N', 'S') : '',
+                lonDms: lon !== null ? formatDms(lon, 'E', 'W') : '',
+                mtbSheet: mtb ? mtb.sheet : '',
+                mtbQuadrant: mtb ? mtb.quadrant : '',
+                mtbMf: mtb ? mtb.mf : '',
+                mtbText: mtb ? mtb.text : 'außerhalb Raster',
+                mtbShort: mtb ? mtb.short : '',
+                mtbUncertain,
+                proofUrl,
+                proofHost,
+                references: typeof rec.references === 'string' ? rec.references.trim() : '',
+                sourceList,
+                sourceText: sourceList.join(' | '),
+                identifiedBy: rec.identifiedBy || '',
+                year: yr || '', month: mo || '', day: dy || '',
+                isoDate,
+                isoWeek,
+                stageKey,
+                stageLabel,
+                eventTime: rec.eventTime || '',
+                sex: rec.sex || '',
+                occurrenceStatus: rec.occurrenceStatus || '',
+                recordNumber: rec.recordNumber || '',
+                catalogNumber: rec.catalogNumber || '',
+                occurrenceID: rec.occurrenceID || '',
+                occurrenceRemarks: rec.occurrenceRemarks || '',
+                habitat: rec.habitat || '',
+                verificationStatus: rec.identificationVerificationStatus || '',
+                taxonRank: rec.taxonRank || '',
+                taxonKey: rec.taxonKey || '',
+                speciesKey: rec.speciesKey || '',
+                kingdom: rec.kingdom || '', family: rec.family || '', genus: rec.genus || '',
+                country: rec.country || '',
+                county: rec.county || '',
+                elevation: (rec.elevation !== undefined ? rec.elevation : ''),
+                geodeticDatum: rec.geodeticDatum || '',
+                rightsHolder: rec.rightsHolder || '',
+                institutionCode: rec.institutionCode || '',
+                datasetKey: rec.datasetKey || '',
+                publishingOrg: rec.publishingOrgKey || '',
+                lastInterpreted: rec.lastInterpreted || '',
+                issues: Array.isArray(rec.issues) ? rec.issues.join(' | ') : '',
+                imageUrls: Array.isArray(rec.media) ? rec.media.filter(m => m.identifier).map(m => m.identifier).join(' | ') : '',
+                uncertainty,
+                eventDateRaw: rec.eventDate || '',
+                dateFormatted,
+                timestamp,
+                individualCount: rec.individualCount || null,
+                lifeStage: rec.lifeStage || '',
+                recordedBy: rec.recordedBy || 'Anonym',
+                datasetName: rec.datasetName || rec.institutionCode || 'GBIF-Datensatz',
+                basisOfRecord: rec.basisOfRecord || '',
+                license: rec.license || '',
+                imageUrl: mediaItem ? mediaItem.identifier : null,
+                gbifUrl: `https://www.gbif.org/occurrence/${rec.gbifID}`
+            };
+        }
+
+        function buildPopupHtml(item) {
+            return `
+                    <div class="min-w-[220px] max-w-[270px]">
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-0.5">GBIF Fundmeldung</div>
+                        <div class="text-sm font-bold text-slate-900 italic">${escapeHtml(item.scientificName)}</div>
+                        ${item.vernacularName ? `<div class="text-xs text-slate-600 mb-1.5">${escapeHtml(item.vernacularName)}</div>` : '<div class="mb-1.5"></div>'}
+                        
+                        ${item.imageUrl ? `
+                            <div class="mb-2 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 h-28">
+                                <img src="${escapeAttr(item.imageUrl)}" alt="Belegfoto" class="w-full h-full object-cover" onerror="this.parentElement.style.display='none'" />
+                            </div>
+                        ` : ''}
+
+                        <div class="space-y-1 text-xs text-slate-700 border-t border-slate-100 pt-2">
+                            <div><span class="font-semibold text-slate-500">Fundort:</span> ${escapeHtml(item.location)}</div>
+                            <div><span class="font-semibold text-slate-500">Datum:</span> ${escapeHtml(item.dateFormatted)}</div>
+                            <div><span class="font-semibold text-slate-500">Koordinaten:</span> <span class="font-mono">${item.latStr}, ${item.lonStr}</span></div>
+                            <div class="font-mono text-[11px] text-slate-500">${escapeHtml(item.latDms)} · ${escapeHtml(item.lonDms)}</div>
+                            <div><span class="font-semibold text-slate-500">MTB-Q / MF:</span> <span class="font-mono font-semibold text-emerald-800">${escapeHtml(item.mtbText)}</span>${item.mtbUncertain ? ` <span title="Koordinatenunschärfe ${item.uncertainty} m – Minutenfeld unsicher" class="text-amber-600">⚠</span>` : ''}</div>
+                            ${item.uncertainty ? `<div><span class="font-semibold text-slate-500">Unschärfe:</span> ${item.uncertainty} m</div>` : ''}
+                            <div><span class="font-semibold text-slate-500">Beobachter:</span> ${escapeHtml(item.recordedBy)}</div>
+                            ${extraHtml(item)}
+                            ${item.individualCount ? `<div><span class="font-semibold text-slate-500">Anzahl:</span> ${item.individualCount}</div>` : ''}
+                            ${sourceHtml(item)}
+                            <div><span class="font-semibold text-slate-500">Datensatz:</span> ${escapeHtml(item.datasetName)}</div>
+                        </div>
+
+                        <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-1.5">
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                ${proofLinksHtml(item)}
+                            </div>
+                            <div class="flex flex-wrap gap-1.5">
+                                <button type="button" onclick="copyToClipboard('${item.latStr}, ${item.lonStr}')" class="text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md transition">Koordinaten kopieren</button>
+                                <button type="button" onclick="copyToClipboard('${item.mtbShort}', 'MTB/Q/MF')" class="text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md transition">MTB kopieren</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+        }
+
+        /**
+         * Zeichnet alle Beobachtungen als interaktive Kreismarker auf die Karte
+         */
+        function renderMapMarkers(occurrences) {
+            markersLayerGroup.clearLayers();
+            state.markersById = {};
+
+            occurrences.forEach(item => {
+                if (item.lat === null || item.lon === null) return;
+
+                const marker = L.circleMarker([item.lat, item.lon], {
+                    radius: 7,
+                    fillColor: '#f59e0b',
+                    color: '#ffffff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.92
+                });
+
+                const popupHtml = buildPopupHtml(item);
+
+                marker.bindPopup(popupHtml);
+                marker.addTo(markersLayerGroup);
+                state.markersById[item.gbifID] = marker;
+            });
+        }
+
+        /**
+         * Filtert und sortiert die Ergebnisse für die rechte Seitenleiste
+         */
+        function applyFilterAndSort() {
+            const filterText = filterResultsInput.value.trim().toLowerCase();
+            const sortMode = sortResultsSelect.value;
+
+            let list = [...state.allOccurrences];
+
+            if (filterText) {
+                list = list.filter(item =>
+                    item.scientificName.toLowerCase().includes(filterText) ||
+                    item.vernacularName.toLowerCase().includes(filterText) ||
+                    item.location.toLowerCase().includes(filterText) ||
+                    item.datasetName.toLowerCase().includes(filterText) ||
+                    item.dateFormatted.toLowerCase().includes(filterText) ||
+                    item.recordedBy.toLowerCase().includes(filterText) ||
+                    item.mtbText.toLowerCase().includes(filterText) ||
+                    item.mtbShort.includes(filterText)
+                );
+            }
+
+            list.sort((a, b) => {
+                if (sortMode === 'date-desc') return b.timestamp - a.timestamp;
+                if (sortMode === 'date-asc') return a.timestamp - b.timestamp;
+                if (sortMode === 'locality-asc') return a.location.localeCompare(b.location, 'de');
+                if (sortMode === 'source-asc') return a.datasetName.localeCompare(b.datasetName, 'de');
+                return 0;
+            });
+
+            state.filteredOccurrences = list;
+            renderResultsList(list);
+            document.getElementById('toggle-chart-btn').disabled = state.allOccurrences.length === 0;
+            document.getElementById('enrich-all-btn').disabled = state.allOccurrences.length === 0;
+            if (!document.getElementById('chart-panel').classList.contains('hidden')) renderPhenologyChart();
+        }
+
+        filterResultsInput.addEventListener('input', applyFilterAndSort);
+        sortResultsSelect.addEventListener('change', applyFilterAndSort);
+
+        /**
+         * Rendert die Kartenliste in der Seitenleiste
+         */
+        function renderResultsList(list) {
+            if (state.allOccurrences.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="bg-white border border-slate-200 rounded-2xl p-8 text-center shadow-sm">
+                        <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-xl">
+                            🔍
+                        </div>
+                        <h3 class="text-sm font-bold text-slate-800 mb-1">Keine Funde in diesem Suchkästchen</h3>
+                        <p class="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                            Für <span class="font-semibold italic">${escapeHtml(state.selectedTaxon.scientificName || speciesInput.value)}</span> liegen in diesem Kartenausschnitt aktuell keine GBIF-Beobachtungen vor. Vergrößere den Radius oder verschiebe das Kästchen auf der Karte.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (list.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="bg-white border border-slate-200 rounded-2xl p-6 text-center">
+                        <p class="text-sm font-semibold text-slate-700">Keine Treffer für deinen Textfilter</p>
+                        <p class="text-xs text-slate-500 mt-1">Lösche den Filtertext oben, um alle ${state.allOccurrences.length} Funde wieder anzuzeigen.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            resultsContainer.innerHTML = list.map(item => `
+                <article 
+                    onclick="focusOccurrenceOnMap(${item.gbifID})"
+                    class="group bg-white hover:bg-emerald-50/40 border border-slate-200 hover:border-emerald-300 rounded-xl p-3.5 shadow-sm transition cursor-pointer"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            <!-- Name (Wissenschaftlich & Trivialname) -->
+                            <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                                <h3 class="text-sm font-bold text-slate-900 italic group-hover:text-emerald-800 transition">
+                                    ${escapeHtml(item.scientificName)}
+                                </h3>
+                                ${item.vernacularName ? `<span class="text-xs font-medium text-emerald-700">${escapeHtml(item.vernacularName)}</span>` : ''}
+                            </div>
+
+                            <!-- Fundort -->
+                            <div class="flex items-start gap-1.5 text-xs text-slate-700 mt-1.5">
+                                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <span class="font-medium leading-snug">${escapeHtml(item.location)}</span>
+                            </div>
+
+                            <!-- Koordinaten mit Kopier-Button -->
+                            <div class="flex flex-wrap items-center gap-2 mt-2">
+                                <div class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md text-[11px] font-mono">
+                                    <span>${item.latStr}, ${item.lonStr}</span>
+                                    <button 
+                                        type="button" 
+                                        title="Koordinaten kopieren"
+                                        onclick="event.stopPropagation(); copyToClipboard('${item.latStr}, ${item.lonStr}')"
+                                        class="text-slate-400 hover:text-emerald-700 transition p-0.5"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                ${item.individualCount ? `
+                                    <span class="text-[11px] bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md font-medium">
+                                        Anzahl: ${item.individualCount}
+                                    </span>
+                                ` : ''}
+                            </div>
+                        
+                            <!-- MTB, Beobachter, Nachweis -->
+                            <div class="mt-2 space-y-1 text-[11px] text-slate-600">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <span class="font-semibold text-slate-500">MTB-Q / MF:</span>
+                                    <span class="font-mono bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded-md">${escapeHtml(item.mtbText)}</span>
+                                    ${item.mtbUncertain ? `<span title="Koordinatenunschärfe ${item.uncertainty} m – Minutenfeld unsicher" class="text-amber-600">⚠ ±${item.uncertainty} m</span>` : ''}
+                                    <button type="button" title="MTB/Quadrant/MF kopieren" onclick="event.stopPropagation(); copyToClipboard('${item.mtbShort}', 'MTB/Q/MF')" class="text-slate-400 hover:text-emerald-700 transition px-1">⧉</button>
+                                </div>
+                                <div class="font-mono text-slate-500">${escapeHtml(item.latDms)} · ${escapeHtml(item.lonDms)}</div>
+                                <div><span class="font-semibold text-slate-500">Beobachter:</span> ${escapeHtml(item.recordedBy)}</div>
+                            ${extraHtml(item)}
+                                ${sourceHtml(item)}
+                                <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5">${proofLinksHtml(item, true)}</div>
+                            </div>
+                        </div>
+
+                        <!-- Rechts: Datum, Quelle & Link -->
+                        <div class="text-right shrink-0 flex flex-col items-end justify-between self-stretch">
+                            <span class="text-xs font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">
+                                ${escapeHtml(item.dateFormatted)}
+                            </span>
+                            
+                            <div class="mt-2 flex flex-col items-end gap-1">
+                                <span class="text-[11px] text-slate-500 max-w-[140px] truncate" title="${escapeAttr(item.datasetName)}">
+                                    ${escapeHtml(item.datasetName)}
+                                </span>
+                                <a 
+                                    href="${item.gbifUrl}" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    onclick="event.stopPropagation()"
+                                    class="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-0.5"
+                                >
+                                    <span>GBIF</span>
+                                    <span>↗</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        /**
+         * Zentriert die Karte auf einen ausgewählten Listeneintrag und öffnet das Marker-Popup
+         */
+        window.focusOccurrenceOnMap = function(gbifID) {
+            const marker = state.markersById[gbifID];
+            if (!marker) return;
+
+            const latLng = marker.getLatLng();
+            map.setView(latLng, Math.max(map.getZoom(), 14), { animate: true });
+            marker.openPopup();
+
+            // Auf Mobilgeräten sanft nach oben zur Karte scrollen
+            if (window.innerWidth < 1024) {
+                document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        };
+
+        // --- CSV Export (Excel-kompatibel mit Semikolon & UTF-8 BOM) ---
+        exportCsvBtn.addEventListener('click', () => {
+            const dataToExport = state.filteredOccurrences.length > 0
+                ? state.filteredOccurrences
+                : state.allOccurrences;
+
+            if (dataToExport.length === 0) return;
+
+            const dec = v => (v === '' || v === null || v === undefined) ? '' : String(v).replace('.', ','); // Dezimalkomma für Excel
+            const columns = [
+                ['GBIF_ID', i => i.gbifID],
+                ['Wissenschaftlicher_Name', i => i.scientificName],
+                ['Deutscher_Name', i => i.vernacularName],
+                ['Taxonrang', i => i.taxonRank],
+                ['Familie', i => i.family],
+                ['Gattung', i => i.genus],
+                ['Taxon_Key', i => i.taxonKey],
+                ['Art_Key', i => i.speciesKey],
+                ['Datum', i => i.dateFormatted],
+                ['Datum_ISO', i => i.isoDate],
+                ['Jahr', i => i.year],
+                ['Monat', i => i.month],
+                ['Tag', i => i.day],
+                ['Kalenderwoche_ISO', i => i.isoWeek || ''],
+                ['Uhrzeit', i => i.eventTime],
+                ['Lebensstadium_Original', i => i.lifeStage],
+                ['Entwicklungsstadium', i => i.stageLabel],
+                ['Geschlecht', i => i.sex],
+                ['Anzahl', i => i.individualCount || ''],
+                ['Vorkommensstatus', i => i.occurrenceStatus],
+                ['Fundort', i => i.location],
+                ['Ortsangabe_Locality', i => i.locality],
+                ['Gemeinde', i => i.municipality],
+                ['Landkreis', i => i.county],
+                ['Bundesland', i => i.stateProvince],
+                ['Land', i => i.country],
+                ['Habitat', i => i.habitat],
+                ['Hoehe_m', i => dec(i.elevation)],
+                ['Breitengrad_Lat', i => dec(i.latStr)],
+                ['Laengengrad_Lon', i => dec(i.lonStr)],
+                ['Breite_DMS', i => i.latDms],
+                ['Laenge_DMS', i => i.lonDms],
+                ['Geodaetisches_Datum', i => i.geodeticDatum],
+                ['Koordinatenunschaerfe_m', i => i.uncertainty || ''],
+                ['MTB_TK25', i => i.mtbSheet],
+                ['MTB_Quadrant', i => i.mtbQuadrant],
+                ['Minutenfeld_MF', i => i.mtbMf],
+                ['MTB_Q_MF', i => i.mtbShort],
+                ['MF_unsicher_wegen_Unschaerfe', i => i.mtbUncertain ? 'ja' : ''],
+                ['Beobachter', i => i.recordedBy],
+                ['Bestimmt_von', i => i.identifiedBy],
+                ['Bestimmungsstatus', i => i.verificationStatus],
+                ['Bemerkungen', i => i.occurrenceRemarks],
+                ['Zusatz_Beobachter', i => (i.extra && i.extra.observer) || ''],
+                ['Zusatz_Beobachter_ID', i => (i.extra && i.extra.observerId) || ''],
+                ['Zusatz_Ort_Datengeber', i => (i.extra && i.extra.place) || ''],
+                ['Zusatz_Adresse_OSM', i => (i.extra && i.extra.address) || ''],
+                ['Zusatz_Quellen', i => (i.extra && i.extra.sources) ? i.extra.sources.join(' | ') : ''],
+                ['Zusatz_Hinweise', i => (i.extra && i.extra.notes) ? i.extra.notes.join(' | ') : ''],
+                ['Quelle', i => i.sourceText],
+                ['Datensatz', i => i.datasetName],
+                ['Institution', i => i.institutionCode],
+                ['Datensatz_Key', i => i.datasetKey],
+                ['Aufnahmeart', i => i.basisOfRecord],
+                ['Belegnummer', i => i.catalogNumber],
+                ['Fundnummer', i => i.recordNumber],
+                ['Rechteinhaber', i => i.rightsHolder],
+                ['Lizenz', i => i.license],
+                ['Bild_Links', i => i.imageUrls],
+                ['GBIF_Link', i => i.gbifUrl],
+                ['Nachweis_Link', i => i.proofUrl],
+                ['GBIF_Hinweise_Issues', i => i.issues],
+                ['GBIF_zuletzt_interpretiert', i => i.lastInterpreted]
+            ];
+            const headers = columns.map(c => c[0]);
+
+            const escapeCsvCell = (val) => {
+                if (val === null || val === undefined) return '""';
+                const str = String(val).replace(/"/g, '""');
+                return `"${str}"`;
+            };
+
+            const rows = dataToExport.map(item => columns.map(c => c[1](item)).map(escapeCsvCell).join(';'));
+
+            const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\r\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+
+            const cleanSpecies = (state.selectedTaxon.scientificName || 'gbif_suche')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '_');
+            const dateStamp = new Date().toISOString().slice(0, 10);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `gbif_${cleanSpecies}_${dateStamp}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            showToast(`${dataToExport.length} Einträge als CSV heruntergeladen.`, 'success');
+        });
+
+        // --- Ladezustand steuern ---
+        function setLoading(loading) {
+            state.isLoading = loading;
+            mapLoader.classList.toggle('hidden', !loading);
+            searchGbifBtn.disabled = loading;
+        }
+
+        // --- Messtischblatt (TK25) / Quadrant / Minutenfeld aus WGS84-Koordinaten ---
+        /**
+         * TK25-Raster: Blatt 0101 beginnt bei 55°54' N / 5°50' E (Greenwich).
+         * Ein Blatt ist 6' hoch (N-S) und 10' breit (W-E).
+         * Blattnummer = ZZSS (ZZ = Zeile von Nord, SS = Spalte von West).
+         * Quadrant: 1 = NW, 2 = NO, 3 = SW, 4 = SO (je 3' x 5').
+         * Minutenfeld (MF): 1' x 1' Feld im Quadrant, 1-15, zeilenweise von NW (5 Spalten x 3 Zeilen).
+         */
+        function calcMtb(lat, lon) {
+            const EPS = 1e-9;
+            const fromTop = (55 * 60 + 54) - lat * 60;   // Minuten südlich der Oberkante von Zeile 1
+            const fromLeft = lon * 60 - (5 * 60 + 50);   // Minuten östlich der Westkante von Spalte 1
+            if (fromTop < 0 || fromLeft < 0) return null;
+
+            const row = Math.floor(fromTop / 6 + EPS) + 1;
+            const col = Math.floor(fromLeft / 10 + EPS) + 1;
+            if (row > 99 || col > 99) return null;
+
+            const inRow = fromTop - (row - 1) * 6;      // 0..6 (Minuten ab Blatt-Oberkante)
+            const inCol = fromLeft - (col - 1) * 10;    // 0..10 (Minuten ab Blatt-Westkante)
+
+            const south = inRow >= 3 - EPS;
+            const east = inCol >= 5 - EPS;
+            const quadrant = (south ? 2 : 0) + (east ? 1 : 0) + 1;
+
+            const qRow = Math.min(2, Math.floor((inRow - (south ? 3 : 0)) + EPS));
+            const qCol = Math.min(4, Math.floor((inCol - (east ? 5 : 0)) + EPS));
+            const mf = qRow * 5 + qCol + 1;
+
+            const sheet = String(row).padStart(2, '0') + String(col).padStart(2, '0');
+            return { sheet, quadrant, mf, text: `${sheet}/${quadrant} · MF ${mf}`, short: `${sheet}/${quadrant}/${mf}` };
+        }
+
+        function formatDms(value, posChar, negChar) {
+            const abs = Math.abs(value);
+            let deg = Math.floor(abs);
+            let min = Math.floor((abs - deg) * 60);
+            let sec = Math.round(((abs - deg) * 60 - min) * 60 * 10) / 10;
+            if (sec >= 60) { sec = 0; min += 1; }
+            if (min >= 60) { min = 0; deg += 1; }
+            return `${deg}°${String(min).padStart(2, '0')}′${sec.toFixed(1).padStart(4, '0')}″ ${value >= 0 ? posChar : negChar}`;
+        }
+
+        /** Link-Block: Original-Nachweis (falls vorhanden) + GBIF-Eintrag */
+        function proofLinksHtml(item, stopProp = false) {
+            const stop = stopProp ? 'onclick="event.stopPropagation()"' : '';
+            const cls = 'text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-0.5';
+            const proof = item.proofUrl
+                ? `<a href="${escapeAttr(item.proofUrl)}" target="_blank" rel="noopener noreferrer" ${stop} class="${cls}" title="${escapeAttr(item.proofUrl)}">Nachweis${item.proofHost ? ' (' + escapeHtml(item.proofHost) + ')' : ''} ↗</a>`
+                : '';
+            return `${proof}<a href="${item.gbifUrl}" target="_blank" rel="noopener noreferrer" ${stop} class="${cls}">GBIF-Eintrag ↗</a>`;
+        }
+
+        // --- Phänologie: Wochen & Entwicklungsstadien ---
+        const STAGES = [
+            { key: 'egg',     label: 'Ei',                color: '#eab308' },
+            { key: 'larva',   label: 'Raupe / Larve',     color: '#16a34a' },
+            { key: 'pupa',    label: 'Puppe',             color: '#92400e' },
+            { key: 'adult',   label: 'Falter / Imago',    color: '#2563eb' },
+            { key: 'unknown', label: 'Stadium unbekannt', color: '#94a3b8' }
+        ];
+        const hiddenStages = new Set();
+
+        function classifyLifeStage(raw) {
+            const v = (raw || '').toString().toLowerCase();
+            if (!v) return 'unknown';
+            if (/\b(egg|eggs|ei|eier|eigelege|ovum)\b|\begg/.test(v)) return 'egg';
+            if (/larv|raupe|caterpillar|nymph|instar|maggot|grub/.test(v)) return 'larva';
+            if (/pupa|pupae|puppe|chrysalis|cocoon|kokon/.test(v)) return 'pupa';
+            if (/adult|imago|imagines|falter|mature|reproductive|sub-?adult/.test(v)) return 'adult';
+            return 'unknown';
+        }
+
+        function isoWeekNumber(y, m, d) {
+            const dt = new Date(Date.UTC(y, m - 1, d));
+            const dayNum = dt.getUTCDay() || 7;
+            dt.setUTCDate(dt.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
+            return Math.ceil(((dt - yearStart) / 86400000 + 1) / 7);
+        }
+
+        function renderPhenologyChart() {
+            const wrap = document.getElementById('chart-svg-wrap');
+            const legend = document.getElementById('chart-legend');
+            const info = document.getElementById('chart-info');
+            if (!wrap) return;
+
+            const list = state.filteredOccurrences;
+            const weeks = Array.from({ length: 53 }, () => ({ egg: 0, larva: 0, pupa: 0, adult: 0, unknown: 0 }));
+            const totals = { egg: 0, larva: 0, pupa: 0, adult: 0, unknown: 0 };
+            let noDate = 0;
+
+            list.forEach(it => {
+                if (!it.isoWeek) { noDate++; return; }
+                weeks[it.isoWeek - 1][it.stageKey]++;
+                totals[it.stageKey]++;
+            });
+
+            // Legende (klickbar zum Ein-/Ausblenden)
+            legend.innerHTML = STAGES.map(st => {
+                const off = hiddenStages.has(st.key);
+                return `<button type="button" data-stage="${st.key}" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-medium transition ${off ? 'bg-slate-100 text-slate-400 border-slate-200 line-through' : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'}">
+                    <span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:${st.color};opacity:${off ? 0.35 : 1}"></span>${st.label} <span class="text-slate-400">(${totals[st.key]})</span></button>`;
+            }).join('');
+            legend.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+                const k = b.dataset.stage;
+                hiddenStages.has(k) ? hiddenStages.delete(k) : hiddenStages.add(k);
+                renderPhenologyChart();
+            }));
+
+            const withDate = list.length - noDate;
+            info.textContent = `${withDate} Funde mit vollständigem Datum` + (noDate ? ` · ${noDate} ohne Tagesdatum nicht dargestellt` : '');
+
+            const visibleStages = STAGES.filter(st => !hiddenStages.has(st.key));
+            const weekTotal = w => visibleStages.reduce((a, st) => a + weeks[w][st.key], 0);
+            let maxVal = 0;
+            for (let w = 0; w < 53; w++) maxVal = Math.max(maxVal, weekTotal(w));
+
+            if (withDate === 0) {
+                wrap.innerHTML = '<div class="text-xs text-slate-400 py-6 text-center">Keine Funde mit vollständigem Datum vorhanden.</div>';
+                return;
+            }
+
+            // Y-Achse: runde Obergrenze
+            const niceMax = (() => {
+                if (maxVal <= 5) return 5;
+                const mag = Math.pow(10, Math.floor(Math.log10(maxVal)));
+                const n = maxVal / mag;
+                return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * mag;
+            })();
+
+            const W = 780, H = 230, mL = 36, mR = 8, mT = 8, mB = 34;
+            const plotW = W - mL - mR, plotH = H - mT - mB;
+            const slot = plotW / 53, barW = Math.max(3, slot - 2);
+            const yOf = v => mT + plotH - (v / niceMax) * plotH;
+
+            let svg = `<svg viewBox="0 0 ${W} ${H}" style="min-width:560px;width:100%;height:auto" role="img" aria-label="Funde pro Kalenderwoche">`;
+
+            // Gitter + Y-Beschriftung
+            for (let i = 0; i <= 4; i++) {
+                const v = niceMax * i / 4;
+                const y = yOf(v);
+                svg += `<line x1="${mL}" x2="${W - mR}" y1="${y}" y2="${y}" stroke="#e2e8f0" stroke-width="1"/>`;
+                svg += `<text x="${mL - 5}" y="${y + 3}" text-anchor="end" font-size="9" fill="#64748b">${Number.isInteger(v) ? v : v.toFixed(1)}</text>`;
+            }
+
+            // Monatsmarken (Wochenanfang je Monat, Nicht-Schaltjahr als Näherung)
+            const monthNames = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+            const monthStartWeek = [1,5,9,14,18,22,27,31,36,40,44,49];
+            monthNames.forEach((mn, i) => {
+                const x = mL + (monthStartWeek[i] - 1) * slot;
+                svg += `<line x1="${x}" x2="${x}" y1="${mT}" y2="${mT + plotH}" stroke="#f1f5f9" stroke-width="1"/>`;
+                svg += `<text x="${x + 2}" y="${H - 4}" font-size="9" fill="#94a3b8">${mn}</text>`;
+            });
+
+            // Balken
+            for (let w = 0; w < 53; w++) {
+                const x = mL + w * slot + (slot - barW) / 2;
+                let acc = 0;
+                const tipParts = [];
+                visibleStages.forEach(st => {
+                    const v = weeks[w][st.key];
+                    if (!v) return;
+                    tipParts.push(`${st.label}: ${v}`);
+                    const yTop = yOf(acc + v);
+                    const h = yOf(acc) - yTop;
+                    svg += `<rect x="${x.toFixed(2)}" y="${yTop.toFixed(2)}" width="${barW.toFixed(2)}" height="${h.toFixed(2)}" fill="${st.color}"><title>KW ${w + 1} – ${st.label}: ${v}</title></rect>`;
+                    acc += v;
+                });
+                // Wochenbeschriftung
+                if ((w + 1) % 4 === 1 || w === 52) {
+                    svg += `<text x="${(x + barW / 2).toFixed(2)}" y="${H - 17}" text-anchor="middle" font-size="9" fill="#475569">${w + 1}</text>`;
+                }
+            }
+            svg += `<line x1="${mL}" x2="${W - mR}" y1="${mT + plotH}" y2="${mT + plotH}" stroke="#94a3b8"/>`;
+            svg += `<text x="${mL + plotW / 2}" y="${H - 4}" text-anchor="middle" font-size="9" fill="#475569" style="display:none"></text>`;
+            svg += '</svg><div class="text-[10px] text-slate-400 mt-0.5">Zahlen unter der Achse = ISO-Kalenderwoche (KW). Legende anklicken blendet ein Stadium aus.</div>';
+            wrap.innerHTML = svg;
+        }
+
+        // Grafik ein-/ausblenden
+        (function setupChartToggle() {
+            const btn = document.getElementById('toggle-chart-btn');
+            const panel = document.getElementById('chart-panel');
+            const label = document.getElementById('toggle-chart-label');
+            btn.addEventListener('click', () => {
+                const open = panel.classList.toggle('hidden') === false;
+                btn.setAttribute('aria-expanded', String(open));
+                label.textContent = open ? 'Grafik ausblenden' : 'Phänologie-Grafik';
+                if (open) renderPhenologyChart();
+            });
+        })();
+
+        // --- Proxy-Konfiguration & Seitenabruf ---
+        const proxyUrlInput = document.getElementById('proxy-url-input');
+        const proxyEnabledCb = document.getElementById('proxy-enabled');
+        const proxyRenderCb = document.getElementById('proxy-render');
+        const proxyStatus = document.getElementById('proxy-status');
+
+        (function loadProxyPrefs() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('gbifProxyPrefs') || 'null');
+                if (saved) {
+                    proxyUrlInput.value = saved.url || proxyUrlInput.value;
+                    proxyEnabledCb.checked = !!saved.enabled;
+                    proxyRenderCb.checked = saved.render !== false;
+                }
+            } catch (_) {}
+        })();
+        function saveProxyPrefs() {
+            try { localStorage.setItem('gbifProxyPrefs', JSON.stringify(getProxyConfig())); } catch (_) {}
+        }
+        function getProxyConfig() {
+            return {
+                url: proxyUrlInput.value.trim().replace(/\/+$/, ''),
+                enabled: proxyEnabledCb.checked,
+                render: proxyRenderCb.checked
+            };
+        }
+        [proxyUrlInput, proxyEnabledCb, proxyRenderCb].forEach(el => el.addEventListener('change', saveProxyPrefs));
+
+        document.getElementById('proxy-test-btn').addEventListener('click', async () => {
+            const cfg = getProxyConfig();
+            proxyStatus.textContent = 'teste …';
+            proxyStatus.className = 'text-[11px] text-slate-500';
+            try {
+                const d = await fetchJsonTimeout(`${cfg.url}/health`, 6000);
+                proxyStatus.textContent = d.playwright
+                    ? '✓ Proxy erreichbar, Headless-Browser verfügbar'
+                    : '✓ Proxy erreichbar, aber Playwright fehlt (nur einfache Seiten, kein JavaScript)';
+                proxyStatus.className = 'text-[11px] ' + (d.playwright ? 'text-emerald-700' : 'text-amber-600');
+                if (!proxyEnabledCb.checked) { proxyEnabledCb.checked = true; saveProxyPrefs(); }
+            } catch (e) {
+                proxyStatus.textContent = '✗ Nicht erreichbar – läuft proxy_server.py?';
+                proxyStatus.className = 'text-[11px] text-red-600';
+            }
+        });
+
+        /** Holt eine Nachweis-Seite: bevorzugt über den lokalen Proxy, sonst direkt (meist CORS-blockiert). */
+        async function fetchProofPage(url) {
+            const cfg = getProxyConfig();
+            let host = '';
+            try { host = new URL(url).hostname; } catch (_) {}
+
+            if (cfg.enabled && cfg.url) {
+                let d;
+                try {
+                    const ctrl = new AbortController();
+                    const t = setTimeout(() => ctrl.abort(), 90000);
+                    const r = await fetch(`${cfg.url}/fetch?url=${encodeURIComponent(url)}&render=${cfg.render ? 1 : 0}`, { signal: ctrl.signal }).finally(() => clearTimeout(t));
+                    d = await r.json();
+                } catch (e) {
+                    throw new Error('Proxy nicht erreichbar – läuft proxy_server.py?');
+                }
+                if (d.error) throw new Error('Proxy: ' + d.error);
+                return { html: d.html || '', text: d.text || '', via: 'Proxy' + (d.rendered ? ', gerendert' : '') };
+            }
+
+            try {
+                const ctrl = new AbortController();
+                const t = setTimeout(() => ctrl.abort(), 12000);
+                const r = await fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(t));
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return { html: await r.text(), text: '', via: 'direkt' };
+            } catch (e) {
+                throw new Error(`Seite (${host || 'Link'}) vom Browser nicht lesbar (CORS) – oben den Proxy aktivieren`);
+            }
+        }
+
+        // --- Zusatzinfos zu Beobachter & Ort nachladen ---
+        // Quellen (jeweils best effort): 1) GBIF-Originaldaten (verbatim), 2) iNaturalist-API,
+        // 3) die Nachweis-Seite selbst (nur wenn der Server CORS erlaubt), 4) OpenStreetMap-Reverse-Geocoding.
+        async function fetchJsonTimeout(url, ms = 12000) {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), ms);
+            try {
+                const r = await fetch(url, { signal: ctrl.signal });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return await r.json();
+            } finally { clearTimeout(t); }
+        }
+
+        // Nominatim erlaubt max. 1 Anfrage/Sekunde -> gemeinsame Warteschlange
+        let nominatimChain = Promise.resolve();
+        function reverseGeocode(lat, lon) {
+            const job = nominatimChain.then(async () => {
+                const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=17&addressdetails=1&accept-language=de&lat=${lat}&lon=${lon}`;
+                const data = await fetchJsonTimeout(url);
+                await new Promise(r => setTimeout(r, 1100));
+                return data;
+            });
+            nominatimChain = job.catch(() => {});
+            return job;
+        }
+
+        function parseProofHtml(html) {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const meta = n => (doc.querySelector(`meta[property="${n}"], meta[name="${n}"]`) || {}).content || '';
+            const out = { observer: '', place: '', title: (meta('og:title') || (doc.title || '')).trim() };
+            // JSON-LD
+            doc.querySelectorAll('script[type="application/ld+json"]').forEach(sc => {
+                try {
+                    const walk = o => {
+                        if (!o || typeof o !== 'object') return;
+                        if (Array.isArray(o)) return o.forEach(walk);
+                        const au = o.author || o.creator || o.contributor;
+                        if (!out.observer && au) out.observer = typeof au === 'string' ? au : (au.name || (Array.isArray(au) && au[0] && au[0].name) || '');
+                        const loc = o.contentLocation || o.location || o.spatialCoverage;
+                        if (!out.place && loc) out.place = typeof loc === 'string' ? loc : (loc.name || (loc.address && (loc.address.addressLocality || loc.address)) || '');
+                        Object.values(o).forEach(walk);
+                    };
+                    walk(JSON.parse(sc.textContent));
+                } catch (_) {}
+            });
+            if (!out.observer) out.observer = meta('author') || meta('article:author');
+            // Textmuster (z. B. "Beobachter: Max Mustermann", "Fundort: ...")
+            const text = (doc.body ? doc.body.textContent : '').replace(/\s+/g, ' ');
+            if (!out.observer) { const m = text.match(/(?:Beobachter(?:in)?|Melder(?:in)?|Observer)\s*[:\-]?\s*([A-ZÄÖÜ][^|,;:]{1,50}?)(?=\s{1,2}(?:Datum|Ort|Fundort|Art|Anzahl|Beobachtung)\b|\s*[|,;]|$)/); if (m) out.observer = m[1].trim(); }
+            if (!out.place) { const m = text.match(/(?:Fundort|Ort|Location)\s*[:\-]\s*([^|;]{3,80}?)(?=\s{1,2}(?:Datum|Beobachter|Art|Anzahl)\b|\s*[|;]|$)/); if (m) out.place = m[1].trim(); }
+            return out;
+        }
+
+        async function enrichOccurrenceData(item) {
+            const ex = { observer: '', observerId: '', place: '', address: '', sources: [], notes: [], done: true };
+            const pushSrc = n => { if (!ex.sources.includes(n)) ex.sources.push(n); };
+
+            // 1) GBIF verbatim (Originalfelder des Datengebers)
+            try {
+                const v = await fetchJsonTimeout(`https://api.gbif.org/v1/occurrence/${item.gbifID}/verbatim`);
+                const g = name => {
+                    const k = Object.keys(v).find(x => x === name || x.endsWith('/' + name));
+                    return k && v[k] ? String(v[k]).trim() : '';
+                };
+                ex.observer = g('recordedBy') || g('verbatimRecordedBy') || '';
+                ex.observerId = g('recordedByID') || '';
+                const placeParts = [g('locality'), g('verbatimLocality'), g('locationRemarks'), g('municipality'), g('county')].filter(Boolean);
+                ex.place = [...new Set(placeParts)].join(', ');
+                if (ex.observer || ex.place || ex.observerId) pushSrc('GBIF-Originaldaten');
+            } catch (e) { ex.notes.push('GBIF-Originaldaten nicht abrufbar'); }
+
+            // 2) iNaturalist-API (CORS-offen)
+            const url = item.proofUrl;
+            let host = '';
+            try { host = url ? new URL(url).hostname : ''; } catch (_) {}
+            const inat = url && /inaturalist\./i.test(host) ? url.match(/observations\/(\d+)/) : null;
+            if (inat) {
+                try {
+                    const d = await fetchJsonTimeout(`https://api.inaturalist.org/v1/observations/${inat[1]}`);
+                    const o = d.results && d.results[0];
+                    if (o) {
+                        if (o.user) {
+                            const nm = o.user.name ? `${o.user.name} (@${o.user.login})` : `@${o.user.login}`;
+                            ex.observer = nm;
+                            ex.observerId = `https://www.inaturalist.org/people/${o.user.login}`;
+                        }
+                        if (o.place_guess) ex.place = o.place_guess;
+                        pushSrc('iNaturalist-API');
+                    }
+                } catch (e) { ex.notes.push('iNaturalist-API nicht abrufbar'); }
+            } else if (url) {
+                // 3) Nachweis-Seite (über lokalen Proxy oder direkt)
+                try {
+                    const page = await fetchProofPage(url);
+                    const info = parseProofHtml(page.html);
+                    const plain = (page.text || (new DOMParser().parseFromString(page.html, 'text/html').body || {}).textContent || '').replace(/\s+/g, ' ').trim();
+                    ex.debugText = plain.slice(0, 800);
+                    if (info.observer && (!ex.observer || ex.observer === 'Anonym')) ex.observer = info.observer;
+                    if (info.place && !ex.place) ex.place = info.place;
+                    if (info.observer || info.place) pushSrc(`${host || 'Nachweis-Seite'} (${page.via})`);
+                    else ex.notes.push(`Seite geladen (${page.via}), aber keine Beobachter-/Ortsangabe erkannt – siehe Seitentext (Debug)`);
+                } catch (e) {
+                    ex.notes.push(e.message || 'Nachweis-Seite nicht lesbar');
+                }
+            } else {
+                ex.notes.push('Kein Nachweis-Link vorhanden');
+            }
+
+            // 4) Ort: Reverse-Geocoding über OpenStreetMap
+            if (item.lat !== null && item.lon !== null) {
+                try {
+                    const d = await reverseGeocode(item.lat, item.lon);
+                    const a = d.address || {};
+                    const loc = a.hamlet || a.suburb || a.village || a.town || a.city_district || a.city || a.municipality || '';
+                    const parts = [a.road, loc, a.postcode, a.county, a.state].filter(Boolean);
+                    ex.address = [...new Set(parts)].join(', ') || d.display_name || '';
+                    if (ex.address) pushSrc('OpenStreetMap');
+                } catch (e) { ex.notes.push('OSM-Ortsabfrage nicht abrufbar'); }
+            }
+            return ex;
+        }
+
+        function refreshItemUI(item, rerenderList) {
+            const marker = state.markersById[item.gbifID];
+            if (marker) marker.setPopupContent(buildPopupHtml(item));
+            if (rerenderList) applyFilterAndSort();
+        }
+
+        window.enrichOccurrence = async function(id) {
+            const item = state.allOccurrences.find(x => String(x.gbifID) === String(id));
+            if (!item || (item.extra && (item.extra.loading || item.extra.done))) return;
+            item.extra = { loading: true };
+            refreshItemUI(item, true);
+            item.extra = await enrichOccurrenceData(item);
+            refreshItemUI(item, true);
+        };
+
+        function sourceHtml(item) {
+            if (!item.sourceList || item.sourceList.length === 0) return '';
+            const parts = item.sourceList.map(x => /^https?:\/\//i.test(x)
+                ? `<a href="${escapeAttr(x)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="text-emerald-700 hover:underline break-all">${escapeHtml(x)}</a>`
+                : `<span class="break-all">${escapeHtml(x)}</span>`);
+            return `<div><span class="font-semibold text-slate-500">Quelle:</span> ${parts.join('<br>')}</div>`;
+        }
+
+        function extraHtml(item) {
+            const e = item.extra;
+            if (!e) {
+                return `<div><button type="button" onclick="event.stopPropagation(); enrichOccurrence('${item.gbifID}')" class="text-[11px] font-semibold text-sky-700 hover:underline">🔎 Beobachter/Ort nachladen</button></div>`;
+            }
+            if (e.loading) return '<div class="text-[11px] text-slate-400">Details werden geladen …</div>';
+            const row = (label, val) => val ? `<div><span class="font-semibold text-slate-500">${label}:</span> ${escapeHtml(val)}</div>` : '';
+            const idLink = /^https?:\/\//i.test(e.observerId)
+                ? `<div><a href="${escapeAttr(e.observerId)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="font-semibold text-emerald-700 hover:underline">Beobachter-Profil ↗</a></div>`
+                : row('Beobachter-ID', e.observerId);
+            return `<div class="mt-1 pl-2 border-l-2 border-sky-200 space-y-0.5">
+                ${row('Beobachter (Quelle)', e.observer)}
+                ${idLink}
+                ${row('Ort (Datengeber)', e.place)}
+                ${row('Adresse (OSM)', e.address)}
+                ${e.sources.length ? `<div class="text-[10px] text-slate-400">Quellen: ${escapeHtml(e.sources.join(', '))}</div>` : ''}
+                ${e.notes.length ? `<div class="text-[10px] text-amber-600">${escapeHtml(e.notes.join(' · '))}</div>` : ''}
+                ${e.debugText ? `<details onclick="event.stopPropagation()" class="text-[10px] text-slate-500"><summary class="cursor-pointer">Seitentext (Debug)</summary><div class="mt-0.5 break-words max-h-24 overflow-y-auto">${escapeHtml(e.debugText)}</div></details>` : ''}
+            </div>`;
+        }
+
+        document.getElementById('enrich-all-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('enrich-all-btn');
+            const todo = state.filteredOccurrences.filter(x => !x.extra).slice(0, 50);
+            if (todo.length === 0) { showToast('Alle gefilterten Funde sind bereits nachgeladen.', 'info'); return; }
+            btn.disabled = true;
+            let done = 0;
+            const queue = [...todo];
+            const worker = async () => {
+                while (queue.length) {
+                    const it = queue.shift();
+                    it.extra = { loading: true };
+                    it.extra = await enrichOccurrenceData(it);
+                    done++;
+                    btn.textContent = `🔎 ${done}/${todo.length} …`;
+                    refreshItemUI(it, false);
+                }
+            };
+            await Promise.all([worker(), worker(), worker()]);
+            btn.textContent = '🔎 Details nachladen';
+            btn.disabled = false;
+            applyFilterAndSort();
+            showToast(`${todo.length} Funde mit Zusatzinfos ergänzt.`, 'success');
+        });
+
+        // --- Taxonomische Rangstufen ---
+        const RANK_DE = {
+            KINGDOM: 'Reich', PHYLUM: 'Stamm', CLASS: 'Klasse', ORDER: 'Ordnung', SUPERFAMILY: 'Überfamilie',
+            FAMILY: 'Familie', SUBFAMILY: 'Unterfamilie', TRIBE: 'Tribus', GENUS: 'Gattung', SUBGENUS: 'Untergattung',
+            SPECIES: 'Art', SUBSPECIES: 'Unterart', VARIETY: 'Varietät', FORM: 'Form'
+        };
+        function rankLabel(rank) { return RANK_DE[(rank || '').toUpperCase()] || (rank ? rank : 'Taxon'); }
+        function isHigherRank(rank) { return !!rank && !['SPECIES', 'SUBSPECIES', 'VARIETY', 'FORM'].includes(rank.toUpperCase()); }
+
+        // --- XSS-Schutz Helfer ---
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function escapeAttr(str) {
+            return escapeHtml(str);
+        }
+
+        // Such-Button Event
+        searchGbifBtn.addEventListener('click', fetchGbifOccurrences);
+
+        // --- Initialisierung beim Laden der Seite ---
+        window.addEventListener('load', () => {
+            clearSpeciesBtn.classList.remove('hidden');
+            const initialBounds = calculateBoundsFromCenter(state.centerLat, state.centerLon, state.radiusKm);
+            renderInteractiveBoundingBox(initialBounds, true);
+        });
+    </script>
+</body>
+</html>
