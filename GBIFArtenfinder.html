@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GBIF Artenfinder – Interaktive Kartensuche</title>
     
@@ -130,7 +131,6 @@
                         <p class="text-xs text-slate-500 hidden sm:block">Interaktive Umkreis- &amp; Kästchensuche für Biodiversitätsdaten</p>
                     </div>
                 </div>
-
             </div>
 
             <!-- Steuerungs-Grid -->
@@ -193,12 +193,12 @@
                     <div class="text-[11px] text-slate-500 mt-0.5 truncate">
                         Tipp: Klick auf Karte setzt Kästchen neu
                     </div>
-                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-slate-600">
-                    <label class="inline-flex items-center gap-1" title="Zeigt die politische Grenze des gesuchten Ortes bzw. der Region (OpenStreetMap/Nominatim)"><input id="boundary-toggle" type="checkbox" class="accent-emerald-600"> Verwaltungsgrenze anzeigen</label>
-                    <button type="button" id="boundary-use-btn" disabled class="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-300 rounded-lg font-semibold">Als Suchfläche (exakte Grenze)</button>
-                    <button type="button" id="boundary-draw-btn" disabled title="Übernimmt die Grenze als normal gezeichnete Fläche mit verschiebbaren Ecken" class="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-300 rounded-lg font-semibold">Als gezeichnete Fläche</button>
-                    <span id="boundary-info" class="text-slate-400 truncate"></span>
-                </div>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-slate-600">
+                        <label class="inline-flex items-center gap-1" title="Zeigt die politische Grenze des gesuchten Ortes bzw. der Region (OpenStreetMap/Nominatim)"><input id="boundary-toggle" type="checkbox" class="accent-emerald-600"> Verwaltungsgrenze anzeigen</label>
+                        <button type="button" id="boundary-use-btn" disabled class="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-300 rounded-lg font-semibold">Als Suchfläche (exakte Grenze)</button>
+                        <button type="button" id="boundary-draw-btn" disabled title="Übernimmt die Grenze als normal gezeichnete Fläche mit verschiebbaren Ecken" class="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-300 rounded-lg font-semibold">Als gezeichnete Fläche</button>
+                        <span id="boundary-info" class="text-slate-400 truncate"></span>
+                    </div>
                 </div>
 
                 <!-- 3. Kästchen-Größe / Radius -->
@@ -253,7 +253,6 @@
             <label class="inline-flex items-center gap-1"><input id="f-photo" type="checkbox" class="accent-emerald-600"> nur mit Foto</label>
             <label class="inline-flex items-center gap-1" title="Koordinatenunsicherheit höchstens"><input id="f-unc" type="checkbox" class="accent-emerald-600"> Genauigkeit ≤ 1 km</label>
             <label class="inline-flex items-center gap-1" title="TK25-Raster: MTB (6'×10'), Quadrant (3'×5'), Minutenfeld (1'×1')"><input id="mtb-grid-toggle" type="checkbox" class="accent-emerald-600"> MTB/Q/MF-Raster</label>
-            <button type="button" id="carto-key-btn" title="Optional: kostenloser CARTO-API-Key (carto.com/basemaps/apikey) schaltet die CARTO-Karte frei" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-semibold">🔑 CARTO-Key</button>
             <button type="button" id="geoloc-btn" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-semibold">📍 Mein Standort</button>
             <button type="button" id="share-btn" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-semibold">🔗 Link kopieren</button>
             <button type="button" id="gbif-portal-btn" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-semibold">↗ GBIF-Portal</button>
@@ -268,8 +267,8 @@
         <section class="relative w-full lg:w-[55%] xl:w-[58%] h-[420px] sm:h-[480px] lg:h-full border-b lg:border-b-0 lg:border-r border-slate-200 shrink-0">
             <div id="map"></div>
 
-            <!-- Modus: Rechteck oder frei gezeichnete Fläche -->
-            <div id="mode-panel" class="absolute top-3 left-14 z-[500] bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl shadow-md px-2 py-1.5 flex flex-wrap items-center gap-1.5 text-xs max-w-[calc(100%-4.5rem)]">
+            <!-- Modus: Rechteck oder frei gezeichnete Fläche + Satelliten-Schnellumschalter -->
+            <div id="mode-panel" class="absolute top-3 left-14 z-[500] bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl shadow-md px-2 py-1.5 flex flex-wrap items-center gap-1.5 text-xs max-w-[calc(100%-6.5rem)]">
                 <button type="button" id="mode-rect-btn" class="px-2.5 py-1 rounded-lg font-semibold border transition">▭ Rechteck</button>
                 <button type="button" id="mode-poly-btn" class="px-2.5 py-1 rounded-lg font-semibold border transition">⬠ Fläche zeichnen</button>
                 <span id="poly-actions" class="hidden inline-flex flex-wrap items-center gap-1.5">
@@ -279,6 +278,7 @@
                 </span>
                 <button type="button" id="poly-save-btn" title="Fläche als JSON-Datei speichern" class="px-2 py-1 rounded-lg font-semibold bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 transition">💾 Fläche speichern</button>
                 <button type="button" id="poly-load-btn" title="Gespeicherte Fläche (GeoJSON/JSON) laden oder auf die Karte ziehen" class="px-2 py-1 rounded-lg font-semibold bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 transition">📂 Fläche laden</button>
+                <button type="button" id="satellite-quick-btn" title="Zwischen Karten- und Satellitenansicht wechseln" class="px-2.5 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 transition">🛰️ Satellit</button>
                 <input type="file" id="poly-file" accept=".json,.geojson,application/json" class="hidden">
                 <span id="poly-hint" class="hidden basis-full text-[11px] text-slate-500 leading-snug"></span>
             </div>
@@ -325,24 +325,33 @@
                         </p>
                     </div>
 
-                    <div class="flex items-center gap-2">
-                    <button type="button" id="toggle-chart-btn" disabled aria-expanded="false"
-                        class="px-3.5 py-2 bg-white hover:bg-emerald-50 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-emerald-800 border border-emerald-300 disabled:border-slate-200 text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20V10m6 10V4m6 16v-7m4 7H2"></path></svg>
-                        <span id="toggle-chart-label">Phänologie-Grafik</span>
-                    </button>
-                    <!-- CSV Export Button -->
-                    <button 
-                        type="button" 
-                        id="export-csv-btn" 
-                        disabled
-                        class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                        </svg>
-                        <span>CSV herunterladen</span>
-                    </button>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- Button für Phänologie-Grafik -->
+                        <button type="button" id="toggle-chart-btn" disabled aria-expanded="false"
+                            class="px-3 py-2 bg-white hover:bg-emerald-50 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-emerald-800 border border-emerald-300 disabled:border-slate-200 text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20V10m6 10V4m6 16v-7m4 7H2"></path></svg>
+                            <span id="toggle-chart-label">Phänologie</span>
+                        </button>
+
+                        <!-- Button für Datenanalyse / Jahresverlauf mit Trendanalyse -->
+                        <button type="button" id="toggle-trend-btn" disabled aria-expanded="false"
+                            class="px-3 py-2 bg-white hover:bg-indigo-50 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-indigo-800 border border-indigo-300 disabled:border-slate-200 text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 15l4-4 3 3 5-6"></path></svg>
+                            <span id="toggle-trend-label">📊 Datenanalyse</span>
+                        </button>
+
+                        <!-- CSV Export Button -->
+                        <button 
+                            type="button" 
+                            id="export-csv-btn" 
+                            disabled
+                            class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            <span>CSV herunterladen</span>
+                        </button>
                     </div>
                 </div>
 
@@ -385,12 +394,63 @@
 
             <!-- Phänologie-Grafik (optional ein-/ausblendbar) -->
             <div id="chart-panel" class="hidden shrink-0 border-b border-slate-200 bg-white px-4 py-3">
-                <div class="flex flex-wrap items-baseline justify-between gap-x-3">
-                    <h3 class="text-sm font-bold text-slate-900">Funde pro Kalenderwoche <span class="font-normal text-slate-500">(alle Jahre zusammengefasst)</span></h3>
-                    <span id="chart-info" class="text-[11px] text-slate-500"></span>
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Funde pro Kalenderwoche <span class="font-normal text-slate-500">(alle Jahre zusammengefasst)</span></h3>
+                        <span id="chart-info" class="text-[11px] text-slate-500"></span>
+                    </div>
+                    <button type="button" id="export-pheno-jpg-btn" title="Phänologie-Grafik inkl. Titel und Legende als JPG speichern"
+                        class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shrink-0">
+                        <span>📷 Als JPG speichern</span>
+                    </button>
                 </div>
                 <div id="chart-legend" class="flex flex-wrap gap-1.5 mt-2"></div>
                 <div id="chart-svg-wrap" class="mt-2 w-full overflow-x-auto"></div>
+            </div>
+
+            <!-- Datenanalyse: Nachweise pro Jahr mit Trendanalyse (optional ein-/ausblendbar) -->
+            <div id="trend-panel" class="hidden shrink-0 border-b border-slate-200 bg-slate-50/70 px-4 py-3 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Datenanalyse: Nachweise pro Jahr &amp; Trend</h3>
+                        <p id="trend-info" class="text-[11px] text-slate-500"></p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-700">
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                            <input type="checkbox" id="trend-show-linear" checked class="accent-rose-600">
+                            <span class="inline-flex items-center gap-1 font-medium"><span class="w-3.5 h-0.5 bg-rose-600 inline-block border-t border-dashed border-rose-600"></span> Lineare Trendlinie</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                            <input type="checkbox" id="trend-show-ma" checked class="accent-amber-500">
+                            <span class="inline-flex items-center gap-1 font-medium"><span class="w-3.5 h-0.5 bg-amber-500 inline-block"></span> 3-Jahres-Schnitt</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                            <input type="checkbox" id="trend-show-obs" checked class="accent-teal-600">
+                            <span class="inline-flex items-center gap-1 font-medium"><span class="w-3.5 h-0.5 bg-teal-600 inline-block"></span> Beobachter pro Jahr</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer select-none" id="trend-show-spec-label" title="Für jedes Jahr: Anzahl Nachweise dividiert durch Anzahl eindeutiger Beobachter dieses Jahres (rechte Skala). Jahre ohne Beobachternamen haben keinen Wert.">
+                            <input type="checkbox" id="trend-show-spec" checked class="accent-violet-600">
+                            <span class="inline-flex items-center gap-1 font-medium"><span class="w-3.5 h-0.5 bg-violet-600 inline-block"></span> Nachweise pro Jahr ÷ Beobachter pro Jahr</span>
+                        </label>
+                        <button type="button" id="export-trend-csv-btn" title="Alle in der Datenanalyse verwendeten Werte (Jahresreihe, Trend, Beobachter, Quellen) als CSV speichern"
+                            class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
+                            <span>📄 Daten als CSV</span>
+                        </button>
+                        <button type="button" id="export-trend-jpg-btn" title="Vollständige Datenanalyse mit Kennzahlen, Diagramm und Legende als JPG speichern"
+                            class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
+                            <span>📷 Als JPG speichern</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Statistische Kennzahlen -->
+                <div id="trend-stats-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2.5"></div>
+                <!-- SVG-Diagramm -->
+                <div id="trend-svg-wrap" class="mt-2.5 w-full overflow-x-auto bg-white border border-slate-200 rounded-xl p-2"></div>
+                <!-- Verteilung nach Quelle -->
+                <div class="mt-2.5 bg-white border border-slate-200 rounded-xl p-2">
+                    <div class="text-[11px] font-bold text-slate-700 px-1 mb-1">Verteilung nach Quelle</div>
+                    <div id="source-svg-wrap" class="w-full overflow-x-auto"></div>
+                </div>
             </div>
 
             <!-- Scrollbarer Ergebnisbereich -->
@@ -429,7 +489,8 @@
             isLoading: false,
             mode: 'rect',          // 'rect' | 'poly'
             rectBounds: null,
-            polygon: { pts: [], closed: false }
+            polygon: { pts: [], closed: false },
+            isSatelliteView: false
         };
 
         // --- DOM-Elemente ---
@@ -495,65 +556,84 @@
         }
 
         // --- Karte initialisieren (Leaflet) ---
-        if (typeof L === 'undefined') {
-            document.getElementById('map').innerHTML = '<div style="padding:24px;font:14px sans-serif;color:#991b1b">Die Kartenbibliothek (Leaflet von unpkg.com) konnte nicht geladen werden. Bitte Internetverbindung, Werbeblocker, Firewall oder Proxy prüfen und die Seite neu laden.</div>';
-            throw new Error('Leaflet nicht geladen');
-        }
         const map = L.map('map', {
             center: [state.centerLat, state.centerLon],
             zoom: 12,
             zoomControl: true
         });
 
-        const IS_FILE = location.protocol === 'file:';
-        const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19, referrerPolicy: 'origin-when-cross-origin',
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende | Daten: <a href="https://www.gbif.org">GBIF.org</a>'
+        // Hinweis: Manche Tile-Anbieter blockieren Anfragen ohne Referer ("Access blocked")
+        // oder verlangen einen API-Key ("API key required") und liefern dann ein Platzhalterbild.
+        // Standard ist deshalb die Esri-Straßenkarte (ohne Key, ohne Referer-Pflicht);
+        // weitere Karten sind über das Layer-Menü oben rechts wählbar.
+        const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende | Daten: <a href="https://www.gbif.org">GBIF.org</a>';
+        const osmLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri | Daten: <a href="https://www.gbif.org">GBIF.org</a>'
+        }).addTo(map);
+        const osmDeLayer = L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', { maxZoom: 19, attribution: OSM_ATTR });
+
+        const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+            maxZoom: 17,
+            attribution: '© OpenTopoMap'
         });
-        // CARTO verlangt seit 2026 einen (kostenlosen) API-Key für Rasterkacheln -> nur mit eigenem Key nutzbar
-        let cartoKey = ''; try { cartoKey = localStorage.getItem('gbifCartoKey') || ''; } catch (_) {}
-        const cartoLayer = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png' + (cartoKey ? '?key=' + encodeURIComponent(cartoKey) : ''), {
-            maxZoom: 20, maxNativeZoom: 18,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende &copy; <a href="https://carto.com/attributions">CARTO</a>'
+
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: '© Esri'
         });
-        // Esri-Straßenkarte: ohne Key und ohne Referer nutzbar (Standard)
-        const esriStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 19, maxNativeZoom: 18,
-            attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, METI/NASA, EPA, USDA | Daten: <a href="https://www.gbif.org">GBIF.org</a>'
-        });
-        // Lokal geöffnete Datei sendet keinen Referer -> OSM sperrt die Kacheln. Dann CARTO als Standard.
-        (cartoKey ? cartoLayer : esriStreet).addTo(map);
-        let tileErr = 0, tileOk = 0;
-        osmLayer.on('tileload', () => tileOk++);
-        osmLayer.on('tileerror', () => {
-            if (++tileErr >= 6 && !tileOk && map.hasLayer(osmLayer)) {
-                map.removeLayer(osmLayer); esriStreet.addTo(map);
-                showToast('OSM-Kacheln nicht ladbar – wechsle auf die Esri-Straßenkarte.', 'warning');
-            }
-        });
-        // Wird OSM gewählt, kurz prüfen, ob der Server diese Seite sperrt (HTTP 403 ohne Referer) – dann zurück zu CARTO
-        map.on('baselayerchange', async e => {
-            if (e.layer !== osmLayer) return;
-            try {
-                const r = await fetch('https://tile.openstreetmap.org/0/0/0.png', { mode: 'cors' });
-                if (r.status === 403) throw new Error('403');
-            } catch (err) {
-                map.removeLayer(osmLayer); esriStreet.addTo(map);
-                showToast('OpenStreetMap sperrt Anfragen dieser Seite (kein Referer, "Access blocked"). Bitte Datei über http://localhost ausliefern. Esri-Straßenkarte aktiv.', 'warning');
-            }
-        });
-        if (window.ResizeObserver) new ResizeObserver(() => map.invalidateSize()).observe(document.getElementById('map'));
+
+        let activeBaseLayer = osmLayer;
 
         L.control.layers({
-            'OpenStreetMap': osmLayer,
-            'Straßenkarte (Esri)': esriStreet,
-            ...(cartoKey ? { 'Straßenkarte (CARTO, eigener Key)': cartoLayer } : {}),
-            'Topografie': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: 'Kartendaten: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende, SRTM | Kartendarstellung: © <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)' }),
-            'Satellit': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles © Esri — Esri, Maxar, Earthstar Geographics, and the GIS User Community' })
+            'Straßenkarte (Esri)': osmLayer,
+            'OpenStreetMap (DE)': osmDeLayer,
+            'Topografie': topoLayer,
+            'Satellit': satelliteLayer
         }, null, { position: 'topright' }).addTo(map);
+
+        // Satellitenansicht-Status & Schnell-Umschalter synchronisieren
+        const satelliteQuickBtn = document.getElementById('satellite-quick-btn');
+        function syncSatelliteState(isSat) {
+            state.isSatelliteView = !!isSat;
+            if (satelliteQuickBtn) {
+                if (state.isSatelliteView) {
+                    satelliteQuickBtn.innerHTML = '🗺️ Karte';
+                    satelliteQuickBtn.className = 'px-2.5 py-1 rounded-lg font-semibold bg-slate-800 hover:bg-slate-900 text-white border border-slate-700 transition shadow-sm';
+                } else {
+                    satelliteQuickBtn.innerHTML = '🛰️ Satellit';
+                    satelliteQuickBtn.className = 'px-2.5 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 transition';
+                }
+            }
+            if (typeof gridToggle !== 'undefined' && gridToggle && gridToggle.checked) {
+                redrawGrid();
+            }
+        }
+
+        map.on('baselayerchange', (e) => {
+            activeBaseLayer = e.layer;
+            syncSatelliteState(e.name === 'Satellit' || e.layer === satelliteLayer);
+        });
+
+        if (satelliteQuickBtn) {
+            satelliteQuickBtn.addEventListener('click', () => {
+                if (state.isSatelliteView) {
+                    if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+                    if (!map.hasLayer(osmLayer)) osmLayer.addTo(map);
+                    activeBaseLayer = osmLayer;
+                    syncSatelliteState(false);
+                } else {
+                    if (activeBaseLayer && map.hasLayer(activeBaseLayer)) map.removeLayer(activeBaseLayer);
+                    if (!map.hasLayer(satelliteLayer)) satelliteLayer.addTo(map);
+                    activeBaseLayer = satelliteLayer;
+                    syncSatelliteState(true);
+                }
+            });
+        }
+
         // Layer-Gruppen für Suchkästchen und Fund-Marker
         const bboxLayerGroup = L.layerGroup().addTo(map);
-        const markersLayerGroup = (L.markerClusterGroup ? L.markerClusterGroup({ maxClusterRadius: 40, showCoverageOnHover: false }) : L.layerGroup()).addTo(map);
+        const markersLayerGroup = L.markerClusterGroup({ maxClusterRadius: 40, showCoverageOnHover: false }).addTo(map);
 
         let searchRectangle = null;
         let handleNW = null;
@@ -1375,8 +1455,12 @@
             // Datumsbestandteile & Kalenderwoche
             let yr = rec.year, mo = rec.month, dy = rec.day;
             if ((!yr || !mo || !dy) && typeof rec.eventDate === 'string') {
-                const mm = rec.eventDate.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T|\s)/);
-                if (mm) { yr = +mm[1]; mo = +mm[2]; dy = +mm[3]; }
+                const mm = rec.eventDate.match(/^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?(?:$|T|\s)/);
+                if (mm) {
+                    yr = yr || +mm[1];
+                    if (mm[2]) mo = mo || +mm[2];
+                    if (mm[3]) dy = dy || +mm[3];
+                }
             }
             const isoWeek = (yr && mo && dy) ? isoWeekNumber(yr, mo, dy) : null;
             const isoDate = (yr && mo && dy) ? `${yr}-${String(mo).padStart(2, '0')}-${String(dy).padStart(2, '0')}` : '';
@@ -1575,9 +1659,12 @@
 
             state.filteredOccurrences = list;
             renderResultsList(list);
-            document.getElementById('toggle-chart-btn').disabled = state.allOccurrences.length === 0;
-            document.getElementById('enrich-all-btn').disabled = state.allOccurrences.length === 0;
+            const hasData = state.allOccurrences.length > 0;
+            document.getElementById('toggle-chart-btn').disabled = !hasData;
+            document.getElementById('toggle-trend-btn').disabled = !hasData;
+            document.getElementById('enrich-all-btn').disabled = !hasData;
             if (!document.getElementById('chart-panel').classList.contains('hidden')) renderPhenologyChart();
+            if (!document.getElementById('trend-panel').classList.contains('hidden')) renderYearlyTrendChart();
         }
 
         filterResultsInput.addEventListener('input', applyFilterAndSort);
@@ -1669,7 +1756,7 @@
                                 </div>
                                 <div class="font-mono text-slate-500">${escapeHtml(item.latDms)} · ${escapeHtml(item.lonDms)}</div>
                                 <div><span class="font-semibold text-slate-500">Beobachter:</span> ${escapeHtml(item.recordedBy)}</div>
-                            ${extraHtml(item)}
+                                ${extraHtml(item)}
                                 ${sourceHtml(item)}
                                 <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5">${proofLinksHtml(item, true)}</div>
                             </div>
@@ -1831,25 +1918,18 @@
         }
 
         // --- Messtischblatt (TK25) / Quadrant / Minutenfeld aus WGS84-Koordinaten ---
-        /**
-         * TK25-Raster: Blatt 0101 beginnt bei 55°54' N / 5°50' E (Greenwich).
-         * Ein Blatt ist 6' hoch (N-S) und 10' breit (W-E).
-         * Blattnummer = ZZSS (ZZ = Zeile von Nord, SS = Spalte von West).
-         * Quadrant: 1 = NW, 2 = NO, 3 = SW, 4 = SO (je 3' x 5').
-         * Minutenfeld (MF): 1' x 1' Feld im Quadrant, 1-15, zeilenweise von NW (5 Spalten x 3 Zeilen).
-         */
         function calcMtb(lat, lon) {
             const EPS = 1e-9;
-            const fromTop = (55 * 60 + 54) - lat * 60;   // Minuten südlich der Oberkante von Zeile 1
-            const fromLeft = lon * 60 - (5 * 60 + 50);   // Minuten östlich der Westkante von Spalte 1
+            const fromTop = (55 * 60 + 54) - lat * 60;
+            const fromLeft = lon * 60 - (5 * 60 + 50);
             if (fromTop < 0 || fromLeft < 0) return null;
 
             const row = Math.floor(fromTop / 6 + EPS) + 1;
             const col = Math.floor(fromLeft / 10 + EPS) + 1;
             if (row > 99 || col > 99) return null;
 
-            const inRow = fromTop - (row - 1) * 6;      // 0..6 (Minuten ab Blatt-Oberkante)
-            const inCol = fromLeft - (col - 1) * 10;    // 0..10 (Minuten ab Blatt-Westkante)
+            const inRow = fromTop - (row - 1) * 6;
+            const inCol = fromLeft - (col - 1) * 10;
 
             const south = inRow >= 3 - EPS;
             const east = inCol >= 5 - EPS;
@@ -1976,7 +2056,7 @@
                 svg += `<text x="${mL - 5}" y="${y + 3}" text-anchor="end" font-size="9" fill="#64748b">${Number.isInteger(v) ? v : v.toFixed(1)}</text>`;
             }
 
-            // Monatsmarken (Wochenanfang je Monat, Nicht-Schaltjahr als Näherung)
+            // Monatsmarken
             const monthNames = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
             const monthStartWeek = [1,5,9,14,18,22,27,31,36,40,44,49];
             monthNames.forEach((mn, i) => {
@@ -1989,38 +2069,903 @@
             for (let w = 0; w < 53; w++) {
                 const x = mL + w * slot + (slot - barW) / 2;
                 let acc = 0;
-                const tipParts = [];
                 visibleStages.forEach(st => {
                     const v = weeks[w][st.key];
                     if (!v) return;
-                    tipParts.push(`${st.label}: ${v}`);
                     const yTop = yOf(acc + v);
                     const h = yOf(acc) - yTop;
                     svg += `<rect x="${x.toFixed(2)}" y="${yTop.toFixed(2)}" width="${barW.toFixed(2)}" height="${h.toFixed(2)}" fill="${st.color}"><title>KW ${w + 1} – ${st.label}: ${v}</title></rect>`;
                     acc += v;
                 });
-                // Wochenbeschriftung
                 if ((w + 1) % 4 === 1 || w === 52) {
                     svg += `<text x="${(x + barW / 2).toFixed(2)}" y="${H - 17}" text-anchor="middle" font-size="9" fill="#475569">${w + 1}</text>`;
                 }
             }
             svg += `<line x1="${mL}" x2="${W - mR}" y1="${mT + plotH}" y2="${mT + plotH}" stroke="#94a3b8"/>`;
-            svg += `<text x="${mL + plotW / 2}" y="${H - 4}" text-anchor="middle" font-size="9" fill="#475569" style="display:none"></text>`;
             svg += '</svg><div class="text-[10px] text-slate-400 mt-0.5">Zahlen unter der Achse = ISO-Kalenderwoche (KW). Legende anklicken blendet ein Stadium aus.</div>';
             wrap.innerHTML = svg;
         }
 
-        // Grafik ein-/ausblenden
-        (function setupChartToggle() {
-            const btn = document.getElementById('toggle-chart-btn');
-            const panel = document.getElementById('chart-panel');
-            const label = document.getElementById('toggle-chart-label');
-            btn.addEventListener('click', () => {
-                const open = panel.classList.toggle('hidden') === false;
-                btn.setAttribute('aria-expanded', String(open));
-                label.textContent = open ? 'Grafik ausblenden' : 'Phänologie-Grafik';
-                if (open) renderPhenologyChart();
+        // --- Beobachter-Statistik: eindeutige Beobachter gesamt und pro Jahr ---
+        // Mehrere Beobachter in einem Feld (getrennt durch | ; oder " & ") werden einzeln gezählt.
+        // Namen ohne Angabe ("Anonym", leer) zählen nicht als Beobachter, werden aber separat ausgewiesen.
+        function getObserverNames(item) {
+            let raw = item.recordedBy;
+            if ((!raw || /^anonym$/i.test(String(raw).trim())) && item.extra && item.extra.observer) raw = item.extra.observer;
+            if (!raw) return [];
+            return String(raw).split(/\s*(?:\||;|\s&\s)\s*/).map(x => x.replace(/\s+/g, ' ').trim())
+                .filter(x => x && !/^(anonym|unbekannt|unknown|n\/a)$/i.test(x));
+        }
+        function computeObserverStats(list) {
+            const byYear = new Map();   // Jahr -> Set(normalisierte Namen)
+            const all = new Set();
+            const specByYear = new Map(); // Jahr -> Set(Arten)
+            const allSpec = new Set();
+            let anonRecords = 0;
+            list.forEach(it => {
+                const spKey = String(it.speciesKey || it.scientificName || '').trim().toLowerCase();
+                const yy = parseInt(it.year, 10);
+                if (spKey) {
+                    allSpec.add(spKey);
+                    if (!isNaN(yy) && yy >= 1700 && yy <= 2100) {
+                        if (!specByYear.has(yy)) specByYear.set(yy, new Set());
+                        specByYear.get(yy).add(spKey);
+                    }
+                }
+                const names = getObserverNames(it);
+                if (!names.length) { anonRecords++; return; }
+                const y = parseInt(it.year, 10);
+                names.forEach(nm => {
+                    const key = nm.toLowerCase();
+                    all.add(key);
+                    if (!isNaN(y) && y >= 1700 && y <= 2100) {
+                        if (!byYear.has(y)) byYear.set(y, new Set());
+                        byYear.get(y).add(key);
+                    }
+                });
             });
+            return { byYear, total: all.size, anonRecords, specByYear, totalSpecies: allSpec.size };
+        }
+
+        // --- Verteilung nach Quelle (Balkendiagramm als SVG) ---
+        // Quelle = Meldeportal/Herkunft des Fundes. Ermittelt aus dem Host des Nachweis-Links,
+        // sonst aus institutionCode bzw. Datensatzname.
+        const SOURCE_PATTERNS = [
+            [/inaturalist/i, 'iNaturalist'], [/observation\.org|waarneming|observado/i, 'Observation.org'],
+            [/naturgucker/i, 'naturgucker.de'], [/ebird|cornell/i, 'eBird'], [/plantnet|pl@ntnet/i, 'Pl@ntNet'],
+            [/artenfinder/i, 'Artenfinder'], [/ornitho|faune-/i, 'Ornitho / Faune'], [/xeno-canto/i, 'Xeno-canto'],
+            [/bionnaire|obsmapp|obsident/i, 'ObsMapp / Obsidentify'], [/lepiforum/i, 'Lepiforum'],
+            [/ukbms|butterfly-conservation/i, 'UK Butterfly Monitoring'], [/senckenberg/i, 'Senckenberg'],
+            [/museum|naturalis|nhm|naturhistor/i, 'Museen / Sammlungen']
+        ];
+        function getSourceLabel(it) {
+            const hay = [it.proofHost, it.institutionCode, it.datasetName, it.references, it.occurrenceID].filter(x => typeof x === 'string' && x).join(' ');
+            for (const [re, label] of SOURCE_PATTERNS) if (re.test(hay)) return label;
+            if (it.proofHost && !/gbif\.org$/i.test(it.proofHost)) return it.proofHost;
+            if (it.institutionCode) return it.institutionCode;
+            if (it.datasetName && it.datasetName !== 'GBIF-Datensatz') return it.datasetName;
+            return 'Unbekannte Quelle';
+        }
+        function shortText(t, max) { t = String(t || ''); return t.length > max ? t.slice(0, max - 1) + '…' : t; }
+        function groupForSource(list, keyFn, labelFn, topN) {
+            const m = new Map();
+            list.forEach(it => {
+                const k = keyFn(it);
+                if (!m.has(k)) m.set(k, { label: labelFn(it), count: 0, obs: new Set() });
+                const g = m.get(k);
+                g.count++;
+                getObserverNames(it).forEach(n => g.obs.add(n.toLowerCase()));
+            });
+            let arr = [...m.values()].sort((a, b) => b.count - a.count);
+            if (arr.length > topN) {
+                const rest = arr.slice(topN);
+                const restObs = new Set();
+                rest.forEach(g => g.obs.forEach(o => restObs.add(o)));
+                arr = arr.slice(0, topN);
+                arr.push({ label: `Weitere (${rest.length})`, count: rest.reduce((a, g) => a + g.count, 0), obs: restObs, other: true });
+            }
+            return arr;
+        }
+        function renderSourceChart(list) {
+            const wrap = document.getElementById('source-svg-wrap');
+            if (!wrap) return;
+            if (!list.length) { wrap.innerHTML = '<div class="text-xs text-slate-400 py-4 text-center">Keine Funde vorhanden.</div>'; return; }
+            const total = list.length;
+            const dsGroups = groupForSource(list,
+                it => getSourceLabel(it).toLowerCase(),
+                it => getSourceLabel(it), 8);
+
+            const W = 700, rowH = 22, top = 34;
+            const rows = dsGroups.length;
+            const H = top + rows * rowH + 12;
+            const dsColors = ['#4f46e5', '#6366f1', '#818cf8', '#a5b4fc'];
+            let svg = `<svg viewBox="0 0 ${W} ${H}" style="min-width:600px;width:100%;height:auto" role="img" aria-label="Verteilung der Funde nach Quelle">`;
+
+            const drawPanel = (x0, title, groups, labelW, barMax, color, maxChars) => {
+                svg += `<text x="${x0}" y="16" font-size="11.5" font-weight="700" fill="#0f172a">${escapeXml(title)}</text>`;
+                svg += `<line x1="${x0}" x2="${x0 + labelW + barMax + 92}" y1="22" y2="22" stroke="#e2e8f0"/>`;
+                const maxC = Math.max(...groups.map(g => g.count), 1);
+                groups.forEach((g, i) => {
+                    const y = top + i * rowH;
+                    const bw = Math.max(2, (g.count / maxC) * barMax);
+                    const pct = (g.count / total) * 100;
+                    const tip = `${g.label}: ${g.count} Funde (${pct.toFixed(1).replace('.', ',')} %), ${g.obs.size} Beobachter`;
+                    const fill = g.other ? '#94a3b8' : (typeof color === 'function' ? color(i) : color);
+                    svg += `<g><title>${escapeXml(tip)}</title>`;
+                    svg += `<text x="${x0}" y="${y + 12}" font-size="10.5" fill="#334155">${escapeXml(shortText(g.label, maxChars))}</text>`;
+                    svg += `<rect x="${x0 + labelW}" y="${y + 2}" width="${bw.toFixed(1)}" height="14" rx="2.5" fill="${fill}" fill-opacity="0.85"/>`;
+                    svg += `<text x="${(x0 + labelW + bw + 6).toFixed(1)}" y="${y + 13}" font-size="10" font-weight="700" fill="#0f172a">${g.count} <tspan font-weight="400" fill="#64748b">(${pct.toFixed(pct < 10 ? 1 : 0).replace('.', ',')} %)</tspan></text>`;
+                    svg += `</g>`;
+                });
+            };
+            drawPanel(0, `Nach Quelle (${new Set(list.map(it => getSourceLabel(it).toLowerCase())).size} gesamt)`, dsGroups, 245, 290, dsColors.length ? (i => dsColors[Math.min(i, dsColors.length - 1)]) : '#4f46e5', 46);
+            svg += '</svg>';
+            wrap.innerHTML = svg;
+        }
+
+        // --- Datenanalyse: Nachweise pro Jahr mit Trendanalyse (Lineare Regression & Gleitender Durchschnitt) ---
+        function renderYearlyTrendChart() {
+            const wrap = document.getElementById('trend-svg-wrap');
+            const statsGrid = document.getElementById('trend-stats-grid');
+            const info = document.getElementById('trend-info');
+            if (!wrap || !statsGrid) return;
+
+            const showLinear = document.getElementById('trend-show-linear').checked;
+            const showMa = document.getElementById('trend-show-ma').checked;
+            const showObs = document.getElementById('trend-show-obs').checked;
+
+            const list = state.filteredOccurrences;
+            const obsStats = computeObserverStats(list);
+            renderSourceChart(list);
+            const multiSpecies = obsStats.totalSpecies > 1;
+            const showSpec = document.getElementById('trend-show-spec').checked;
+            const countsByYear = new Map();
+            let noYearCount = 0;
+
+            list.forEach(it => {
+                const y = parseInt(it.year, 10);
+                if (!isNaN(y) && y >= 1700 && y <= 2100) {
+                    countsByYear.set(y, (countsByYear.get(y) || 0) + 1);
+                } else {
+                    noYearCount++;
+                }
+            });
+
+            if (countsByYear.size === 0) {
+                info.textContent = 'Keine Funde mit Jahresangabe vorhanden.';
+                statsGrid.innerHTML = '';
+                wrap.innerHTML = '<div class="text-xs text-slate-400 py-6 text-center">Keine Funde mit Jahresangabe vorhanden.</div>';
+                return;
+            }
+
+            const yearsPresent = [...countsByYear.keys()].sort((a, b) => a - b);
+            const minYear = yearsPresent[0];
+            const maxYear = yearsPresent[yearsPresent.length - 1];
+
+            // Lückenlose Jahresreihe von minYear bis maxYear (Jahre ohne Fund = 0)
+            const series = [];
+            for (let y = minYear; y <= maxYear; y++) {
+                series.push({ year: y, count: countsByYear.get(y) || 0, obs: (obsStats.byYear.get(y) || new Set()).size, spec: (obsStats.specByYear.get(y) || new Set()).size });
+            }
+
+            const n = series.length;
+            const totalRecords = series.reduce((acc, d) => acc + d.count, 0);
+            const meanY = totalRecords / n;
+
+            // Spitzenjahr ermitteln
+            let peak = series[0];
+            series.forEach(d => { if (d.count >= peak.count) peak = d; });
+
+            // Lineare Regression (y = intercept + slope * x, mit x = 0 .. n-1)
+            let slope = 0;
+            let intercept = meanY;
+            let rSquared = 0;
+
+            if (n >= 2) {
+                const meanX = (n - 1) / 2;
+                let num = 0;
+                let den = 0;
+                for (let i = 0; i < n; i++) {
+                    const dx = i - meanX;
+                    const dy = series[i].count - meanY;
+                    num += dx * dy;
+                    den += dx * dx;
+                }
+                slope = den !== 0 ? num / den : 0;
+                intercept = meanY - slope * meanX;
+
+                // Bestimmtheitsmaß R²
+                let ssTot = 0;
+                let ssRes = 0;
+                for (let i = 0; i < n; i++) {
+                    const yHat = intercept + slope * i;
+                    ssTot += Math.pow(series[i].count - meanY, 2);
+                    ssRes += Math.pow(series[i].count - yHat, 2);
+                }
+                rSquared = ssTot > 0 ? Math.max(0, Math.min(1, 1 - ssRes / ssTot)) : 0;
+            }
+
+            // 3-Jahres gleitender Durchschnitt (zentriert, an Rändern angepasst)
+            const maValues = series.map((_, i) => {
+                const start = Math.max(0, i - 1);
+                const end = Math.min(n - 1, i + 1);
+                let s = 0;
+                let c = 0;
+                for (let j = start; j <= end; j++) {
+                    s += series[j].count;
+                    c++;
+                }
+                return s / c;
+            });
+
+            // Trendrichtung interpretieren
+            let trendLabel = 'Stabil (0,0 / Jahr)';
+            let trendBadgeClass = 'text-slate-700';
+            let trendArrow = '→';
+            if (n < 2) {
+                trendLabel = 'Nur 1 Jahr erfasst';
+            } else if (Math.abs(slope) < 0.05) {
+                trendLabel = `Stabil (${slope >= 0 ? '+' : ''}${slope.toFixed(2).replace('.', ',')} / Jahr)`;
+                trendBadgeClass = 'text-slate-700';
+                trendArrow = '→';
+            } else if (slope > 0) {
+                trendLabel = `Steigend (+${slope.toFixed(2).replace('.', ',')} / Jahr)`;
+                trendBadgeClass = 'text-emerald-700';
+                trendArrow = '↗';
+            } else {
+                trendLabel = `Fallend (${slope.toFixed(2).replace('.', ',')} / Jahr)`;
+                trendBadgeClass = 'text-rose-700';
+                trendArrow = '↘';
+            }
+
+            info.textContent = `Zeitraum ${minYear}–${maxYear} (${n} ${n === 1 ? 'Jahr' : 'Jahre'}, ${totalRecords} Nachweise, ${obsStats.total} Beobachter${multiSpecies ? `, ${obsStats.totalSpecies} Arten` : ''})` + (showSpec && series.some(d => d.obs === 0) ? ` · ${series.filter(d => d.obs === 0).length} Jahre ohne Beobachternamen (kein Quotient)` : '') + (noYearCount ? ` · ${noYearCount} ohne Jahr` : '');
+
+            statsGrid.innerHTML = `
+                <div class="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
+                    <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Zeitraum</div>
+                    <div class="text-xs font-bold text-slate-800 mt-0.5">${minYear === maxYear ? minYear : `${minYear} – ${maxYear}`} <span class="font-normal text-slate-500">(${n} J.)</span></div>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
+                    <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Trend &amp; R²</div>
+                    <div class="text-xs font-bold ${trendBadgeClass} mt-0.5">${trendArrow} ${trendLabel}</div>
+                    <div class="text-[10px] text-slate-500">R² = ${rSquared.toFixed(3).replace('.', ',')}</div>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
+                    <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Spitzenjahr</div>
+                    <div class="text-xs font-bold text-indigo-700 mt-0.5">${peak.year} <span class="font-normal text-slate-600">(${peak.count} Funde)</span></div>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
+                    <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Ø pro Jahr</div>
+                    <div class="text-xs font-bold text-slate-800 mt-0.5">${meanY.toFixed(1).replace('.', ',')} <span class="font-normal text-slate-500">Nachweise</span></div>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5" title="Eindeutige Beobachter laut Feld recordedBy (Mehrfachnennungen einzeln gezählt, 'Anonym' ausgenommen)">
+                    <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Beobachter</div>
+                    <div class="text-xs font-bold text-teal-700 mt-0.5">${obsStats.total} <span class="font-normal text-slate-500">${obsStats.total === 1 ? 'Person' : 'Personen'}</span></div>
+                    <div class="text-[10px] text-slate-500">${obsStats.anonRecords ? `${obsStats.anonRecords} Funde ohne Namen` : 'alle Funde mit Namen'}</div>
+                </div>
+            `;
+
+            // Maximalwert für Y-Achse bestimmen
+            let maxVal = peak.count;
+            if (showLinear && n >= 2) {
+                maxVal = Math.max(maxVal, intercept, intercept + slope * (n - 1));
+            }
+            if (showMa) {
+                maxVal = Math.max(maxVal, ...maValues);
+            }
+            if (showObs) {
+                maxVal = Math.max(maxVal, ...series.map(d => d.obs));
+            }
+
+            const niceMax = (() => {
+                if (maxVal <= 5) return 5;
+                const mag = Math.pow(10, Math.floor(Math.log10(maxVal)));
+                const norm = maxVal / mag;
+                return (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+            })();
+
+            const W = Math.max(680, n * 22 + 70);
+            const H = 225;
+            const mL = 38, mR = showSpec ? 42 : 14, mT = 12, mB = 34;
+            const plotW = W - mL - mR;
+            const plotH = H - mT - mB;
+            const slot = plotW / n;
+            const barW = Math.max(4, Math.min(28, slot * 0.68));
+            const yOf = v => mT + plotH - (Math.max(0, v) / niceMax) * plotH;
+            const xCenterOf = i => mL + (i + 0.5) * slot;
+
+            let svg = `<svg viewBox="0 0 ${W} ${H}" style="min-width:540px;width:100%;height:auto" role="img" aria-label="Nachweise pro Jahr mit Trendanalyse">`;
+
+            // Horizontale Hilfslinien & Y-Achse
+            for (let i = 0; i <= 4; i++) {
+                const v = (niceMax * i) / 4;
+                const y = yOf(v);
+                svg += `<line x1="${mL}" x2="${W - mR}" y1="${y.toFixed(2)}" y2="${y.toFixed(2)}" stroke="#e2e8f0" stroke-width="1"/>`;
+                svg += `<text x="${mL - 6}" y="${(y + 3).toFixed(2)}" text-anchor="end" font-size="9.5" fill="#64748b">${Number.isInteger(v) ? v : v.toFixed(1)}</text>`;
+            }
+
+            // Schrittweite für X-Achsen-Beschriftung bei langen Zeitreihen
+            const labelStep = n <= 16 ? 1 : n <= 32 ? 2 : n <= 60 ? 5 : 10;
+
+            // Balken pro Jahr
+            series.forEach((d, i) => {
+                const xc = xCenterOf(i);
+                const x = xc - barW / 2;
+                const yTop = yOf(d.count);
+                const h = Math.max(d.count > 0 ? 2 : 0, (mT + plotH) - yTop);
+                const trendVal = Math.max(0, intercept + slope * i);
+                const maVal = maValues[i];
+                const tip = `${d.year}: ${d.count} ${d.count === 1 ? 'Nachweis' : 'Nachweise'} | Trend: ${trendVal.toFixed(1).replace('.', ',')} | 3J-Ø: ${maVal.toFixed(1).replace('.', ',')} | Beobachter: ${d.obs}`;
+
+                if (d.count > 0) {
+                    svg += `<rect x="${x.toFixed(2)}" y="${yTop.toFixed(2)}" width="${barW.toFixed(2)}" height="${h.toFixed(2)}" rx="2" fill="#4f46e5" fill-opacity="0.82"><title>${tip}</title></rect>`;
+                } else {
+                    // Dezente Bodenmarkierung für 0-Jahre mit Tooltip
+                    svg += `<rect x="${x.toFixed(2)}" y="${(mT + plotH - 3).toFixed(2)}" width="${barW.toFixed(2)}" height="3" fill="#cbd5e1" fill-opacity="0.55"><title>${tip}</title></rect>`;
+                }
+
+                if (i % labelStep === 0 || i === n - 1) {
+                    svg += `<text x="${xc.toFixed(2)}" y="${H - 12}" text-anchor="middle" font-size="9.5" fill="#475569">${d.year}</text>`;
+                }
+            });
+
+            // 3-Jahres gleitender Durchschnitt (Kurve)
+            if (showMa && n >= 2) {
+                const maPts = maValues.map((v, i) => `${xCenterOf(i).toFixed(2)},${yOf(v).toFixed(2)}`).join(' ');
+                svg += `<polyline fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="${maPts}"/>`;
+                maValues.forEach((v, i) => {
+                    svg += `<circle cx="${xCenterOf(i).toFixed(2)}" cy="${yOf(v).toFixed(2)}" r="2.5" fill="#f59e0b"><title>${series[i].year} · 3-Jahres-Ø: ${v.toFixed(1).replace('.', ',')}</title></circle>`;
+                });
+            }
+
+            // Beobachter pro Jahr (Linie mit Punkten + Wertbeschriftung bei wenigen Jahren)
+            if (showObs) {
+                const obsPts = series.map((d, i) => `${xCenterOf(i).toFixed(2)},${yOf(d.obs).toFixed(2)}`).join(' ');
+                if (n >= 2) svg += `<polyline fill="none" stroke="#0d9488" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="${obsPts}"/>`;
+                series.forEach((d, i) => {
+                    svg += `<circle cx="${xCenterOf(i).toFixed(2)}" cy="${yOf(d.obs).toFixed(2)}" r="3.2" fill="#ffffff" stroke="#0d9488" stroke-width="2"><title>${d.year} · ${d.obs} Beobachter</title></circle>`;
+                    if (n <= 16 && d.obs > 0) svg += `<text x="${xCenterOf(i).toFixed(2)}" y="${(yOf(d.obs) - 7).toFixed(2)}" text-anchor="middle" font-size="9" font-weight="700" fill="#0f766e">${d.obs}</text>`;
+                });
+            }
+
+            // Nachweise pro Beobachter (violette Kurve, eigene Skala rechts)
+            if (showSpec) {
+                const ratios = series.map(d => (d.obs > 0 ? d.count / d.obs : null));
+                const rMaxRaw = Math.max(1, ...ratios.filter(v => v !== null));
+                const rMag = Math.pow(10, Math.floor(Math.log10(rMaxRaw)));
+                const rNorm = rMaxRaw / rMag;
+                const rMax = (rNorm <= 1 ? 1 : rNorm <= 2 ? 2 : rNorm <= 5 ? 5 : 10) * rMag;
+                const yR = v => mT + plotH - (v / rMax) * plotH;
+                for (let i = 0; i <= 2; i++) {
+                    const v = (rMax * i) / 2;
+                    svg += `<text x="${W - mR + 5}" y="${(yR(v) + 3).toFixed(2)}" text-anchor="start" font-size="9.5" fill="#7c3aed">${Number.isInteger(v) ? v : v.toFixed(1).replace('.', ',')}</text>`;
+                }
+                svg += `<text transform="translate(${W - 5} ${(mT + plotH / 2).toFixed(1)}) rotate(-90)" text-anchor="middle" font-size="9" font-weight="600" fill="#7c3aed">Nachweise ÷ Beobachter (pro Jahr)</text>`;
+                const P = [];
+                ratios.forEach((v, i) => { if (v !== null) P.push({ x: xCenterOf(i), y: yR(v) }); });
+                if (P.length >= 2) {
+                    // Geglättete Kurve (Catmull-Rom → kubische Bézier), Kontrollpunkte auf den Plotbereich begrenzt
+                    const clampY = y => Math.max(mT, Math.min(mT + plotH, y));
+                    let d = `M${P[0].x.toFixed(2)},${P[0].y.toFixed(2)}`;
+                    for (let i = 0; i < P.length - 1; i++) {
+                        const p0 = P[i - 1] || P[i], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2] || P[i + 1];
+                        const c1x = p1.x + (p2.x - p0.x) / 6, c1y = clampY(p1.y + (p2.y - p0.y) / 6);
+                        const c2x = p2.x - (p3.x - p1.x) / 6, c2y = clampY(p2.y - (p3.y - p1.y) / 6);
+                        d += ` C${c1x.toFixed(2)},${c1y.toFixed(2)} ${c2x.toFixed(2)},${c2y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
+                    }
+                    svg += `<path d="${d}" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;
+                }
+                ratios.forEach((v, i) => {
+                    if (v === null) return;
+                    svg += `<rect x="${(xCenterOf(i) - 3).toFixed(2)}" y="${(yR(v) - 3).toFixed(2)}" width="6" height="6" transform="rotate(45 ${xCenterOf(i).toFixed(2)} ${yR(v).toFixed(2)})" fill="#7c3aed"><title>${series[i].year} · ${series[i].count} Nachweise ÷ ${series[i].obs} Beobachter = ${v.toFixed(2).replace('.', ',')}</title></rect>`;
+                    if (n <= 16) svg += `<text x="${xCenterOf(i).toFixed(2)}" y="${(yR(v) + 14).toFixed(2)}" text-anchor="middle" font-size="9" font-weight="700" fill="#6d28d9">${v.toFixed(1).replace('.', ',')}</text>`;
+                });
+            }
+
+            // Lineare Regressionsgerade (gestrichelte Trendlinie)
+            if (showLinear && n >= 2) {
+                const y0 = Math.max(0, intercept);
+                const y1 = Math.max(0, intercept + slope * (n - 1));
+                svg += `<line x1="${xCenterOf(0).toFixed(2)}" y1="${yOf(y0).toFixed(2)}" x2="${xCenterOf(n - 1).toFixed(2)}" y2="${yOf(y1).toFixed(2)}" stroke="#e11d48" stroke-width="2.2" stroke-dasharray="6,4"/>`;
+            }
+
+            // Basislinie
+            svg += `<line x1="${mL}" x2="${W - mR}" y1="${mT + plotH}" y2="${mT + plotH}" stroke="#94a3b8" stroke-width="1"/>`;
+            svg += '</svg>';
+
+            wrap.innerHTML = svg;
+        }
+
+        // --- Clientseitiger SVG-zu-Canvas-zu-JPG Export (2x Retina-Auflösung, weißer Hintergrund) ---
+        function escapeXml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        }
+
+        function getAnalysisExportContext() {
+            const sci = state.selectedTaxon.scientificName || speciesInput.value.trim() || 'Unbekannte Art';
+            const vern = state.selectedTaxon.vernacularName || '';
+            const titleSpecies = vern ? `${sci} (${vern})` : sci;
+            const loc = locationInput.value.trim();
+            const areaDesc = state.mode === 'poly' && state.polygon.closed
+                ? `Suchfläche (${state.polygon.pts.length} Ecken, ca. ${polygonAreaKm2(state.polygon.pts).toFixed(1).replace('.', ',')} km²)`
+                : (state.bounds
+                    ? `Suchkästchen (${state.bounds.getSouth().toFixed(3)}–${state.bounds.getNorth().toFixed(3)}° N, ${state.bounds.getWest().toFixed(3)}–${state.bounds.getEast().toFixed(3)}° E)`
+                    : '');
+            const today = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const subtitle = [loc ? `Gebiet: ${loc}` : '', areaDesc, `Stand: ${today}`].filter(Boolean).join('  ·  ');
+            const slug = sci.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'artenfinder';
+            const dateStamp = new Date().toISOString().slice(0, 10);
+            return { sci, vern, titleSpecies, subtitle, slug, dateStamp };
+        }
+
+        function svgMarkupToJpgDownload(svgMarkup, width, height, filename, successMsg) {
+            const scale = 2; // 2x Retina-Auflösung für gestochen scharfe Schriften & Linien
+            const blob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.round(width * scale);
+                    canvas.height = Math.round(height * scale);
+                    const ctx = canvas.getContext('2d');
+
+                    // Weißer Hintergrund zwingend nötig, da JPEG keine Transparenz unterstützt
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.scale(scale, scale);
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((jpgBlob) => {
+                        URL.revokeObjectURL(url);
+                        if (!jpgBlob) {
+                            showToast('JPG-Erstellung fehlgeschlagen.', 'error');
+                            return;
+                        }
+                        const dlUrl = URL.createObjectURL(jpgBlob);
+                        const a = document.createElement('a');
+                        a.href = dlUrl;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(dlUrl), 1500);
+                        showToast(successMsg, 'success');
+                    }, 'image/jpeg', 0.94);
+                } catch (err) {
+                    URL.revokeObjectURL(url);
+                    console.error('JPG-Export Fehler:', err);
+                    showToast('Fehler beim Speichern der JPG-Datei.', 'error');
+                }
+            };
+
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                showToast('Diagramm konnte nicht in ein Bild umgewandelt werden.', 'error');
+            };
+
+            img.src = url;
+        }
+
+        // --- CSV-Export der in der Datenanalyse verwendeten Daten ---
+        function exportAnalysisCsv() {
+            const list = state.filteredOccurrences;
+            const countsByYear = new Map();
+            let noYearCount = 0;
+            list.forEach(it => {
+                const y = parseInt(it.year, 10);
+                if (!isNaN(y) && y >= 1700 && y <= 2100) countsByYear.set(y, (countsByYear.get(y) || 0) + 1);
+                else noYearCount++;
+            });
+            if (countsByYear.size === 0) {
+                showToast('Keine Funde mit Jahresangabe für den CSV-Export vorhanden.', 'warning');
+                return;
+            }
+            const obsStats = computeObserverStats(list);
+            const years = [...countsByYear.keys()].sort((a, b) => a - b);
+            const minYear = years[0], maxYear = years[years.length - 1];
+            const series = [];
+            for (let y = minYear; y <= maxYear; y++) {
+                series.push({
+                    year: y,
+                    count: countsByYear.get(y) || 0,
+                    obs: (obsStats.byYear.get(y) || new Set()).size,
+                    spec: (obsStats.specByYear.get(y) || new Set()).size
+                });
+            }
+            const n = series.length;
+            const total = series.reduce((a, d) => a + d.count, 0);
+            const meanY = total / n;
+
+            // Lineare Regression & 3-Jahres-Durchschnitt (identisch zur Grafik)
+            let slope = 0, intercept = meanY, rSquared = 0;
+            if (n >= 2) {
+                const meanX = (n - 1) / 2;
+                let num = 0, den = 0;
+                for (let i = 0; i < n; i++) { num += (i - meanX) * (series[i].count - meanY); den += (i - meanX) * (i - meanX); }
+                slope = den !== 0 ? num / den : 0;
+                intercept = meanY - slope * meanX;
+                let ssTot = 0, ssRes = 0;
+                for (let i = 0; i < n; i++) {
+                    ssTot += Math.pow(series[i].count - meanY, 2);
+                    ssRes += Math.pow(series[i].count - (intercept + slope * i), 2);
+                }
+                rSquared = ssTot > 0 ? Math.max(0, Math.min(1, 1 - ssRes / ssTot)) : 0;
+            }
+            const ma = series.map((_, i) => {
+                const st = Math.max(0, i - 1), en = Math.min(n - 1, i + 1);
+                let sum = 0, c = 0;
+                for (let j = st; j <= en; j++) { sum += series[j].count; c++; }
+                return sum / c;
+            });
+
+            const ctxInfo = getAnalysisExportContext();
+            const dec = (v, d = 2) => (v === null || v === undefined || isNaN(v)) ? '' : Number(v).toFixed(d).replace('.', ',');
+            const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+            const line = cells => cells.map(q).join(';');
+
+            const out = [];
+            out.push(line(['Datenanalyse GBIF Artenfinder']));
+            out.push(line(['Art', ctxInfo.titleSpecies]));
+            out.push(line(['Gebiet / Suchbereich', ctxInfo.subtitle]));
+            out.push(line(['Nachweise gesamt (gefiltert)', list.length]));
+            out.push(line(['davon mit Jahresangabe', total]));
+            out.push(line(['davon ohne Jahresangabe', noYearCount]));
+            out.push(line(['Zeitraum', minYear === maxYear ? minYear : `${minYear}-${maxYear}`]));
+            out.push(line(['Beobachter gesamt (eindeutig)', obsStats.total]));
+            out.push(line(['Funde ohne Beobachtername', obsStats.anonRecords]));
+            out.push(line(['Arten gesamt', obsStats.totalSpecies]));
+            out.push(line(['Durchschnitt Nachweise pro Jahr', dec(meanY)]));
+            out.push(line(['Trend (Steigung Nachweise pro Jahr)', n >= 2 ? dec(slope, 3) : '']));
+            out.push(line(['Bestimmtheitsmass R2', n >= 2 ? dec(rSquared, 3) : '']));
+            out.push('');
+            out.push(line(['Jahresreihe']));
+            out.push(line(['Jahr', 'Nachweise', 'Beobachter', 'Nachweise_pro_Beobachter', 'Arten', 'Lineare_Trendlinie', 'Gleitender_Durchschnitt_3J']));
+            series.forEach((d, i) => {
+                out.push(line([
+                    d.year, d.count, d.obs,
+                    d.obs > 0 ? dec(d.count / d.obs) : '',
+                    d.spec,
+                    n >= 2 ? dec(Math.max(0, intercept + slope * i)) : '',
+                    dec(ma[i])
+                ]));
+            });
+            out.push('');
+            out.push(line(['Verteilung nach Quelle']));
+            out.push(line(['Quelle', 'Nachweise', 'Anteil_Prozent', 'Beobachter']));
+            groupForSource(list, it => getSourceLabel(it).toLowerCase(), it => getSourceLabel(it), 100000).forEach(g => {
+                out.push(line([g.label, g.count, dec((g.count / list.length) * 100, 1), g.obs.size]));
+            });
+
+            const blob = new Blob(['\uFEFF' + out.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gbif_datenanalyse_${ctxInfo.slug}_${ctxInfo.dateStamp}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1500);
+            showToast('Analysedaten als CSV gespeichert.', 'success');
+        }
+
+        function exportTrendAnalysisJpg() {
+            const trendSvgEl = document.querySelector('#trend-svg-wrap svg');
+            if (!trendSvgEl) {
+                showToast('Keine Jahresdaten für den JPG-Export vorhanden.', 'warning');
+                return;
+            }
+
+            const ctxInfo = getAnalysisExportContext();
+            const showLinear = document.getElementById('trend-show-linear').checked;
+            const showMa = document.getElementById('trend-show-ma').checked;
+            const showObs = document.getElementById('trend-show-obs').checked;
+            const specCbEx = document.getElementById('trend-show-spec');
+            const showSpec = specCbEx.checked;
+            const sourceSvgEl = document.querySelector('#source-svg-wrap svg');
+
+            // Kennzahlen direkt aus dem aktuellen gefilterten Datensatz berechnen
+            const list = state.filteredOccurrences;
+            const obsStats = computeObserverStats(list);
+            const countsByYear = new Map();
+            let noYearCount = 0;
+            list.forEach(it => {
+                const y = parseInt(it.year, 10);
+                if (!isNaN(y) && y >= 1700 && y <= 2100) countsByYear.set(y, (countsByYear.get(y) || 0) + 1);
+                else noYearCount++;
+            });
+            if (countsByYear.size === 0) {
+                showToast('Keine Funde mit Jahresangabe vorhanden.', 'warning');
+                return;
+            }
+
+            const yearsPresent = [...countsByYear.keys()].sort((a, b) => a - b);
+            const minYear = yearsPresent[0];
+            const maxYear = yearsPresent[yearsPresent.length - 1];
+            const series = [];
+            for (let y = minYear; y <= maxYear; y++) series.push({ year: y, count: countsByYear.get(y) || 0 });
+
+            const n = series.length;
+            const totalRecords = series.reduce((a, d) => a + d.count, 0);
+            const meanY = totalRecords / n;
+            let peak = series[0];
+            series.forEach(d => { if (d.count >= peak.count) peak = d; });
+
+            let slope = 0, intercept = meanY, rSquared = 0;
+            if (n >= 2) {
+                const meanX = (n - 1) / 2;
+                let num = 0, den = 0;
+                for (let i = 0; i < n; i++) {
+                    num += (i - meanX) * (series[i].count - meanY);
+                    den += (i - meanX) * (i - meanX);
+                }
+                slope = den !== 0 ? num / den : 0;
+                intercept = meanY - slope * meanX;
+                let ssTot = 0, ssRes = 0;
+                for (let i = 0; i < n; i++) {
+                    ssTot += Math.pow(series[i].count - meanY, 2);
+                    ssRes += Math.pow(series[i].count - (intercept + slope * i), 2);
+                }
+                rSquared = ssTot > 0 ? Math.max(0, Math.min(1, 1 - ssRes / ssTot)) : 0;
+            }
+
+            let trendText = 'Stabil (0,00 / Jahr)';
+            let trendColor = '#334155';
+            if (n < 2) {
+                trendText = 'Nur 1 Jahr erfasst';
+            } else if (Math.abs(slope) < 0.05) {
+                trendText = `→ Stabil ${slope >= 0 ? '+' : ''}${slope.toFixed(2).replace('.', ',')} / J.`;
+            } else if (slope > 0) {
+                trendText = `↗ Steigend +${slope.toFixed(2).replace('.', ',')} / J.`;
+                trendColor = '#047857';
+            } else {
+                trendText = `↘ Fallend ${slope.toFixed(2).replace('.', ',')} / J.`;
+                trendColor = '#be123c';
+            }
+
+            // Abmessungen des bestehenden Diagramms aus viewBox auslesen
+            const vb = (trendSvgEl.getAttribute('viewBox') || '0 0 680 225').split(/\s+/).map(Number);
+            const innerW = vb[2] || 680;
+            const innerH = vb[3] || 225;
+
+            const padX = 28;
+            const cardW = Math.max(940, innerW + padX * 2);
+            const chartAreaW = cardW - padX * 2;
+            const chartScale = chartAreaW / innerW;
+            const chartAreaH = Math.round(innerH * chartScale);
+
+            const headerH = 74;
+            const kpiH = 62;
+            const legendH = 38;
+            const footerH = 26;
+            const svb = sourceSvgEl ? (sourceSvgEl.getAttribute('viewBox') || '0 0 700 240').split(/\s+/).map(Number) : [0, 0, 900, 0];
+            const srcScale = chartAreaW / (svb[2] || 700);
+            const srcInnerH = Math.round((svb[3] || 0) * srcScale);
+            const srcBlockH = sourceSvgEl ? srcInnerH + 56 : 0;
+            const totalH = headerH + kpiH + chartAreaH + legendH + footerH + 24 + srcBlockH;
+
+            const kpis = [
+                { label: 'GESAMTZAHL & ZEITRAUM', val: `${totalRecords} Nachweise`, sub: `${minYear === maxYear ? minYear : `${minYear}–${maxYear}`} (${n} ${n === 1 ? 'Jahr' : 'Jahre'})`, color: '#0f172a' },
+                { label: 'TRENDANALYSE & R²', val: trendText, sub: `Bestimmtheitsmaß R² = ${rSquared.toFixed(3).replace('.', ',')}`, color: trendColor },
+                { label: 'SPITZENJAHR', val: `${peak.year} (${peak.count} Funde)`, sub: noYearCount ? `+ ${noYearCount} ohne Jahr` : 'Höchster Jahreswert', color: '#4338ca' },
+                { label: 'DURCHSCHNITT / JAHR', val: `${meanY.toFixed(1).replace('.', ',')} Nachweise`, sub: 'Arithmetisches Mittel', color: '#0f172a' },
+                { label: 'BEOBACHTER', val: `${obsStats.total} ${obsStats.total === 1 ? 'Person' : 'Personen'}`, sub: obsStats.anonRecords ? `${obsStats.anonRecords} Funde ohne Namen` : 'Eindeutige Beobachter', color: '#0f766e' }
+            ];
+
+            const kpiGap = 12;
+            const kpiBoxW = (chartAreaW - kpiGap * (kpis.length - 1)) / kpis.length;
+            const kpiSvg = kpis.map((k, idx) => {
+                const kx = padX + idx * (kpiBoxW + kpiGap);
+                const ky = headerH + 4;
+                return `
+                    <rect x="${kx.toFixed(1)}" y="${ky}" width="${kpiBoxW.toFixed(1)}" height="52" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+                    <text x="${(kx + 11).toFixed(1)}" y="${ky + 16}" font-size="9.5" font-weight="700" fill="#64748b">${escapeXml(k.label)}</text>
+                    <text x="${(kx + 11).toFixed(1)}" y="${ky + 33}" font-size="12" font-weight="700" fill="${k.color}">${escapeXml(k.val)}</text>
+                    <text x="${(kx + 11).toFixed(1)}" y="${ky + 46}" font-size="9.5" fill="#64748b">${escapeXml(k.sub)}</text>
+                `;
+            }).join('');
+
+            const chartY = headerH + kpiH + 8;
+            const legY = chartY + chartAreaH + 22;
+            let legX = padX;
+            let legendItemsSvg = `
+                <rect x="${legX}" y="${legY - 9}" width="12" height="12" rx="2" fill="#4f46e5" fill-opacity="0.85"/>
+                <text x="${legX + 18}" y="${legY + 1}" font-size="11" font-weight="600" fill="#334155">Nachweise pro Jahr</text>
+            `;
+            legX += 155;
+            if (showLinear && n >= 2) {
+                legendItemsSvg += `
+                    <line x1="${legX}" y1="${legY - 3}" x2="${legX + 22}" y2="${legY - 3}" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="6,4"/>
+                    <text x="${legX + 28}" y="${legY + 1}" font-size="11" font-weight="600" fill="#334155">Lineare Trendlinie</text>
+                `;
+                legX += 155;
+            }
+            if (showMa && n >= 2) {
+                legendItemsSvg += `
+                    <line x1="${legX}" y1="${legY - 3}" x2="${legX + 22}" y2="${legY - 3}" stroke="#f59e0b" stroke-width="2.5"/>
+                    <circle cx="${legX + 11}" cy="${legY - 3}" r="3" fill="#f59e0b"/>
+                    <text x="${legX + 28}" y="${legY + 1}" font-size="11" font-weight="600" fill="#334155">3-Jahres-Durchschnitt</text>
+                `;
+                legX += 175;
+            }
+            if (showObs) {
+                legendItemsSvg += `
+                    <line x1="${legX}" y1="${legY - 3}" x2="${legX + 22}" y2="${legY - 3}" stroke="#0d9488" stroke-width="2.5"/>
+                    <circle cx="${legX + 11}" cy="${legY - 3}" r="3.2" fill="#ffffff" stroke="#0d9488" stroke-width="2"/>
+                    <text x="${legX + 28}" y="${legY + 1}" font-size="11" font-weight="600" fill="#334155">Beobachter pro Jahr</text>
+                `;
+                legX += 165;
+            }
+            if (showSpec) {
+                legendItemsSvg += `
+                    <line x1="${legX}" y1="${legY - 3}" x2="${legX + 22}" y2="${legY - 3}" stroke="#7c3aed" stroke-width="2.5"/>
+                    <rect x="${legX + 8}" y="${legY - 6}" width="6" height="6" transform="rotate(45 ${legX + 11} ${legY - 3})" fill="#7c3aed"/>
+                    <text x="${legX + 28}" y="${legY + 1}" font-size="11" font-weight="600" fill="#334155">Nachweise pro Jahr ÷ Beobachter pro Jahr (rechte Skala)</text>
+                `;
+            }
+            const srcY = legY + 30;
+            const sourceBlockSvg = sourceSvgEl ? `
+    <text x="${padX}" y="${srcY + 6}" font-size="13" font-weight="700" fill="#0f172a">Verteilung nach Quelle</text>
+    <rect x="${padX}" y="${srcY + 14}" width="${chartAreaW}" height="${srcInnerH + 16}" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+    <g transform="translate(${padX}, ${srcY + 22}) scale(${srcScale.toFixed(5)})">
+        ${sourceSvgEl.innerHTML}
+    </g>` : '';
+
+            const compositeSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${cardW}" height="${totalH}" viewBox="0 0 ${cardW} ${totalH}" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+    <rect x="0" y="0" width="${cardW}" height="${totalH}" fill="#ffffff"/>
+    <rect x="${padX}" y="18" width="5" height="42" rx="2.5" fill="#4f46e5"/>
+    <text x="${padX + 14}" y="35" font-size="17" font-weight="700" fill="#0f172a">GBIF Datenanalyse – ${escapeXml(ctxInfo.titleSpecies)}</text>
+    <text x="${padX + 14}" y="55" font-size="11.5" fill="#475569">${escapeXml(ctxInfo.subtitle)}</text>
+    ${kpiSvg}
+    <rect x="${padX}" y="${chartY}" width="${chartAreaW}" height="${chartAreaH}" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+    <g transform="translate(${padX}, ${chartY}) scale(${chartScale.toFixed(5)})">
+        ${trendSvgEl.innerHTML}
+    </g>
+    ${legendItemsSvg}
+    ${sourceBlockSvg}
+    <line x1="${padX}" y1="${totalH - 28}" x2="${cardW - padX}" y2="${totalH - 28}" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="${padX}" y="${totalH - 11}" font-size="10" fill="#64748b">Quelle: GBIF.org (Global Biodiversity Information Facility) · Erstellt mit GBIF Artenfinder</text>
+    <text x="${cardW - padX}" y="${totalH - 11}" text-anchor="end" font-size="10" fill="#64748b">Nachweise pro Jahr &amp; lineare Trendanalyse</text>
+</svg>`;
+
+            svgMarkupToJpgDownload(
+                compositeSvg,
+                cardW,
+                totalH,
+                `gbif_datenanalyse_${ctxInfo.slug}_${ctxInfo.dateStamp}.jpg`,
+                'Datenanalyse als JPG gespeichert.'
+            );
+        }
+
+        function exportPhenologyJpg() {
+            const phenoSvgEl = document.querySelector('#chart-svg-wrap svg');
+            if (!phenoSvgEl) {
+                showToast('Keine Phänologie-Grafik für den JPG-Export vorhanden.', 'warning');
+                return;
+            }
+
+            const ctxInfo = getAnalysisExportContext();
+            const list = state.filteredOccurrences;
+            const totals = { egg: 0, larva: 0, pupa: 0, adult: 0, unknown: 0 };
+            let withDate = 0, noDate = 0;
+            list.forEach(it => {
+                if (!it.isoWeek) { noDate++; return; }
+                withDate++;
+                totals[it.stageKey]++;
+            });
+
+            const vb = (phenoSvgEl.getAttribute('viewBox') || '0 0 780 230').split(/\s+/).map(Number);
+            const innerW = vb[2] || 780;
+            const innerH = vb[3] || 230;
+
+            const padX = 28;
+            const cardW = 840;
+            const chartAreaW = cardW - padX * 2;
+            const chartScale = chartAreaW / innerW;
+            const chartAreaH = Math.round(innerH * chartScale);
+
+            const headerH = 74;
+            const legendH = 34;
+            const footerH = 30;
+            const totalH = headerH + legendH + chartAreaH + footerH + 22;
+
+            // Aktive Stadien-Legende mit Stückzahlen aufbauen
+            let lx = padX;
+            const ly = headerH + 16;
+            const stageBadgesSvg = STAGES.map(st => {
+                const off = hiddenStages.has(st.key);
+                const label = `${st.label}: ${totals[st.key]}${off ? ' (ausgeblendet)' : ''}`;
+                const wEst = label.length * 6.3 + 26;
+                const item = `
+                    <g opacity="${off ? '0.45' : '1'}">
+                        <rect x="${lx.toFixed(1)}" y="${ly - 10}" width="11" height="11" rx="2.5" fill="${st.color}"/>
+                        <text x="${(lx + 16).toFixed(1)}" y="${ly}" font-size="11" font-weight="600" fill="#334155">${escapeXml(label)}</text>
+                    </g>
+                `;
+                lx += wEst + 10;
+                return item;
+            }).join('');
+
+            const chartY = headerH + legendH + 4;
+            const dateNote = `${withDate} Funde mit Tagesdatum${noDate ? ` (${noDate} ohne Tagesdatum nicht dargestellt)` : ''}`;
+
+            const compositeSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${cardW}" height="${totalH}" viewBox="0 0 ${cardW} ${totalH}" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+    <rect x="0" y="0" width="${cardW}" height="${totalH}" fill="#ffffff"/>
+    <rect x="${padX}" y="18" width="5" height="42" rx="2.5" fill="#059669"/>
+    <text x="${padX + 14}" y="35" font-size="17" font-weight="700" fill="#0f172a">GBIF Phänologie – ${escapeXml(ctxInfo.titleSpecies)}</text>
+    <text x="${padX + 14}" y="55" font-size="11.5" fill="#475569">${escapeXml(ctxInfo.subtitle)}  ·  ${escapeXml(dateNote)}</text>
+    ${stageBadgesSvg}
+    <rect x="${padX}" y="${chartY}" width="${chartAreaW}" height="${chartAreaH}" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+    <g transform="translate(${padX}, ${chartY}) scale(${chartScale.toFixed(5)})">
+        ${phenoSvgEl.innerHTML}
+    </g>
+    <line x1="${padX}" y1="${totalH - 28}" x2="${cardW - padX}" y2="${totalH - 28}" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="${padX}" y="${totalH - 11}" font-size="10" fill="#64748b">Quelle: GBIF.org (Global Biodiversity Information Facility) · Erstellt mit GBIF Artenfinder</text>
+    <text x="${cardW - padX}" y="${totalH - 11}" text-anchor="end" font-size="10" fill="#64748b">Funde pro ISO-Kalenderwoche (alle Jahre zusammengefasst)</text>
+</svg>`;
+
+            svgMarkupToJpgDownload(
+                compositeSvg,
+                cardW,
+                totalH,
+                `gbif_phaenologie_${ctxInfo.slug}_${ctxInfo.dateStamp}.jpg`,
+                'Phänologie-Grafik als JPG gespeichert.'
+            );
+        }
+
+        // Grafik-Panels ein-/ausblenden (Phänologie & Jahres-Trendanalyse)
+        (function setupChartToggles() {
+            const chartBtn = document.getElementById('toggle-chart-btn');
+            const chartPanel = document.getElementById('chart-panel');
+            const chartLabel = document.getElementById('toggle-chart-label');
+
+            const trendBtn = document.getElementById('toggle-trend-btn');
+            const trendPanel = document.getElementById('trend-panel');
+            const trendLabel = document.getElementById('toggle-trend-label');
+
+            chartBtn.addEventListener('click', () => {
+                const open = chartPanel.classList.toggle('hidden') === false;
+                chartBtn.setAttribute('aria-expanded', String(open));
+                chartLabel.textContent = open ? 'Phänologie ausblenden' : 'Phänologie';
+                if (open) {
+                    if (!trendPanel.classList.contains('hidden')) {
+                        trendPanel.classList.add('hidden');
+                        trendBtn.setAttribute('aria-expanded', 'false');
+                        trendLabel.textContent = '📊 Datenanalyse';
+                    }
+                    renderPhenologyChart();
+                }
+            });
+
+            trendBtn.addEventListener('click', () => {
+                const open = trendPanel.classList.toggle('hidden') === false;
+                trendBtn.setAttribute('aria-expanded', String(open));
+                trendLabel.textContent = open ? 'Analyse ausblenden' : '📊 Datenanalyse';
+                if (open) {
+                    if (!chartPanel.classList.contains('hidden')) {
+                        chartPanel.classList.add('hidden');
+                        chartBtn.setAttribute('aria-expanded', 'false');
+                        chartLabel.textContent = 'Phänologie';
+                    }
+                    renderYearlyTrendChart();
+                }
+            });
+
+            document.getElementById('trend-show-linear').addEventListener('change', renderYearlyTrendChart);
+            document.getElementById('trend-show-ma').addEventListener('change', renderYearlyTrendChart);
+            document.getElementById('trend-show-obs').addEventListener('change', renderYearlyTrendChart);
+            document.getElementById('trend-show-spec').addEventListener('change', renderYearlyTrendChart);
+            document.getElementById('export-trend-jpg-btn').addEventListener('click', exportTrendAnalysisJpg);
+            document.getElementById('export-trend-csv-btn').addEventListener('click', exportAnalysisCsv);
+            document.getElementById('export-pheno-jpg-btn').addEventListener('click', exportPhenologyJpg);
         })();
 
         // --- Proxy-Konfiguration & Seitenabruf ---
@@ -2100,8 +3045,6 @@
         }
 
         // --- Zusatzinfos zu Beobachter & Ort nachladen ---
-        // Quellen (jeweils best effort): 1) GBIF-Originaldaten (verbatim), 2) iNaturalist-API,
-        // 3) die Nachweis-Seite selbst (nur wenn der Server CORS erlaubt), 4) OpenStreetMap-Reverse-Geocoding.
         async function fetchJsonTimeout(url, ms = 12000) {
             const ctrl = new AbortController();
             const t = setTimeout(() => ctrl.abort(), ms);
@@ -2129,7 +3072,6 @@
             const doc = new DOMParser().parseFromString(html, 'text/html');
             const meta = n => (doc.querySelector(`meta[property="${n}"], meta[name="${n}"]`) || {}).content || '';
             const out = { observer: '', place: '', title: (meta('og:title') || (doc.title || '')).trim() };
-            // JSON-LD
             doc.querySelectorAll('script[type="application/ld+json"]').forEach(sc => {
                 try {
                     const walk = o => {
@@ -2145,7 +3087,6 @@
                 } catch (_) {}
             });
             if (!out.observer) out.observer = meta('author') || meta('article:author');
-            // Textmuster (z. B. "Beobachter: Max Mustermann", "Fundort: ...")
             const text = (doc.body ? doc.body.textContent : '').replace(/\s+/g, ' ');
             if (!out.observer) { const m = text.match(/(?:Beobachter(?:in)?|Melder(?:in)?|Observer)\s*[:\-]?\s*([A-ZÄÖÜ][^|,;:]{1,50}?)(?=\s{1,2}(?:Datum|Ort|Fundort|Art|Anzahl|Beobachtung)\b|\s*[|,;]|$)/); if (m) out.observer = m[1].trim(); }
             if (!out.place) { const m = text.match(/(?:Fundort|Ort|Location)\s*[:\-]\s*([^|;]{3,80}?)(?=\s{1,2}(?:Datum|Beobachter|Art|Anzahl)\b|\s*[|;]|$)/); if (m) out.place = m[1].trim(); }
@@ -2372,13 +3313,6 @@
         map.getContainer().addEventListener('dragover', e => e.preventDefault());
         map.getContainer().addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) f.text().then(loadPolygonFromJson); });
 
-        document.getElementById('carto-key-btn').addEventListener('click', () => {
-            const k = prompt('CARTO-API-Key eingeben (kostenlos unter carto.com/basemaps/apikey). Leer lassen, um den Key zu löschen:', cartoKey);
-            if (k === null) return;
-            try { k.trim() ? localStorage.setItem('gbifCartoKey', k.trim()) : localStorage.removeItem('gbifCartoKey'); } catch (_) {}
-            location.reload();
-        });
-
         // --- GeoJSON-Export der Funde ---
         document.getElementById('geojson-btn').addEventListener('click', () => {
             const list = state.allOccurrences.filter(i => i.lat !== null);
@@ -2438,6 +3372,7 @@
             }
         }
         window.addEventListener('load', () => setTimeout(applyHash, 50));
+
         // --- Politische Grenze (Stadt/Region) als optionale Fläche ---
         let boundaryLayer = null, boundaryRings = null, boundaryRun = 0;
         const boundaryToggle = document.getElementById('boundary-toggle');
@@ -2469,7 +3404,7 @@
                 boundaryInfo.textContent = (hit.display_name || '').split(',').slice(0, 2).join(',') + ' · © OSM';
             } catch (e) { if (run === boundaryRun) boundaryInfo.textContent = 'Grenze konnte nicht geladen werden.'; }
         }
-        function simplifyRing(pts, tol) { // Douglas-Peucker auf [lon,lat]
+        function simplifyRing(pts, tol) {
             const d2 = (p, a, b) => { let x = a[0], y = a[1], dx = b[0] - x, dy = b[1] - y;
                 if (dx || dy) { const t = Math.max(0, Math.min(1, ((p[0] - x) * dx + (p[1] - y) * dy) / (dx * dx + dy * dy))); x += t * dx; y += t * dy; }
                 return (p[0] - x) ** 2 + (p[1] - y) ** 2; };
@@ -2484,7 +3419,7 @@
             if (!boundaryRings) return;
             let ring = boundaryRings[0], tol = 0.0002;
             while (ring.length > 150 && tol < 0.5) { ring = simplifyRing(boundaryRings[0], tol); tol *= 1.6; }
-            const exact = boundaryRings.map(r => r.map(c => L.latLng(c[1], c[0]))); // alle Teilflächen, volle Auflösung [lat,lon]
+            const exact = boundaryRings.map(r => r.map(c => L.latLng(c[1], c[0])));
             loadPolygonFromJson(JSON.stringify({ type: 'Polygon', coordinates: [ring] }), exact);
             showToast('Es werden nur Nachweise innerhalb der exakten Verwaltungsgrenze angezeigt.', 'info');
             if (boundaryRings.length > 1) showToast('Gebiet besteht aus mehreren Teilen – es wird nur der größte Teil als Suchfläche verwendet.', 'info');
@@ -2499,9 +3434,12 @@
         });
         boundaryToggle.addEventListener('change', showBoundary);
 
-        // --- MTB/Q/MF-Gitter als dünne Linien ---
+        // --- MTB/Q/MF-Gitter als dünne Linien (weiß in Satellitenansicht) ---
         const gridStyle = document.createElement('style');
-        gridStyle.textContent = '.mtb-lbl{background:none;border:0;font:600 11px Inter,sans-serif;white-space:nowrap;text-align:center;pointer-events:none;text-shadow:0 0 3px #fff,0 0 3px #fff}';
+        gridStyle.textContent = `
+            .mtb-lbl { background:none; border:0; font:600 11px Inter,sans-serif; white-space:nowrap; text-align:center; pointer-events:none; text-shadow:0 0 3px #fff, 0 0 3px #fff; }
+            .mtb-lbl-sat { background:none; border:0; font:600 11px Inter,sans-serif; white-space:nowrap; text-align:center; pointer-events:none; text-shadow:0 1px 3px rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,0.95); }
+        `;
         document.head.appendChild(gridStyle);
         const gridLayer = L.layerGroup();
         const gridToggle = document.getElementById('mtb-grid-toggle');
@@ -2515,21 +3453,26 @@
             gridLayer.clearLayers();
             if (!gridToggle.checked) return;
             const z = map.getZoom(), b = map.getBounds().pad(0.05);
+            const isSat = !!state.isSatelliteView;
             GRID_LEVELS.forEach(L_ => {
                 if (z < L_.minZoom) return;
                 const rA = Math.ceil((G0_LAT - b.getNorth()) / L_.dLat), rB = Math.floor((G0_LAT - b.getSouth()) / L_.dLat);
                 const cA = Math.ceil((b.getWest() - G0_LON) / L_.dLon), cB = Math.floor((b.getEast() - G0_LON) / L_.dLon);
                 if (rB - rA > 150 || cB - cA > 150) return;
-                const st = { color: L_.color, weight: L_.weight, opacity: L_.opacity, dashArray: L_.dash, interactive: false, lineCap: 'butt' };
+                const lineColor = isSat ? '#ffffff' : L_.color;
+                const lineOpacity = isSat ? (L_.key === 'mf' ? 0.72 : L_.key === 'q' ? 0.88 : 0.96) : L_.opacity;
+                const st = { color: lineColor, weight: L_.weight, opacity: lineOpacity, dashArray: L_.dash, interactive: false, lineCap: 'butt' };
                 for (let r = rA; r <= rB; r++) { const lat = G0_LAT - r * L_.dLat; L.polyline([[lat, b.getWest()], [lat, b.getEast()]], st).addTo(gridLayer); }
                 for (let c = cA; c <= cB; c++) { const lon = G0_LON + c * L_.dLon; L.polyline([[b.getSouth(), lon], [b.getNorth(), lon]], st).addTo(gridLayer); }
                 if (z >= L_.lblZoom && (rB - rA + 1) * (cB - cA + 1) <= 250) {
+                    const lblClass = isSat ? 'mtb-lbl-sat' : 'mtb-lbl';
+                    const lblColor = isSat ? '#ffffff' : L_.color;
                     for (let r = rA - 1; r <= rB; r++) for (let c = cA - 1; c <= cB; c++) {
                         const la = G0_LAT - (r + 0.5) * L_.dLat, lo = G0_LON + (c + 0.5) * L_.dLon;
                         if (!b.contains([la, lo])) continue;
                         const m = calcMtb(la, lo); if (!m) continue;
                         const txt = L_.key === 'mtb' ? m.sheet : L_.key === 'q' ? String(m.quadrant) : String(m.mf);
-                        L.marker([la, lo], { interactive: false, icon: L.divIcon({ className: 'mtb-lbl', html: `<span style="color:${L_.color};opacity:${L_.key === 'mf' ? 0.8 : 1};font-size:${L_.key === 'mtb' ? 13 : 11}px">${txt}</span>`, iconSize: [40, 14], iconAnchor: [20, 7] }) }).addTo(gridLayer);
+                        L.marker([la, lo], { interactive: false, icon: L.divIcon({ className: lblClass, html: `<span style="color:${lblColor};opacity:${L_.key === 'mf' ? (isSat ? 0.9 : 0.8) : 1};font-size:${L_.key === 'mtb' ? 13 : 11}px">${txt}</span>`, iconSize: [40, 14], iconAnchor: [20, 7] }) }).addTo(gridLayer);
                     }
                 }
             });
@@ -2538,8 +3481,6 @@
         map.on('moveend zoomend', () => { if (gridToggle.checked) redrawGrid(); });
         document.getElementById('location-search-btn').addEventListener('click', () => { if (boundaryToggle.checked) showBoundary(); });
         locationInput.addEventListener('keydown', e => { if (e.key === 'Enter' && boundaryToggle.checked) showBoundary(); });
-
-        
 
         window.addEventListener('load', () => {
             clearSpeciesBtn.classList.remove('hidden');
