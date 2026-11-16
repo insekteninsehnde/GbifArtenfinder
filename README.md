@@ -36,7 +36,7 @@ Interaktive Karten-Oberfläche zur Suche von Artnachweisen (Biodiversitätsdaten
 - Ergebnisliste mit Textfilter, Sortierung, MTB-Quadrant je Fund, optionalem Nachladen von Details, **Phänologie-Grafik** (Funde pro Kalenderwoche).
 - Export: **CSV** und **GeoJSON**; **Link** zum Teilen der Suche; Sprung ins **GBIF-Portal** mit gleicher Suche.
 
-![Schema der Oberfläche](docs/img/01-oberflaeche.svg)
+![Schema der Oberfläche](readme-assets/01-oberflaeche.svg)
 
 ---
 
@@ -84,7 +84,7 @@ Es werden höchstens **1.000 Funde pro Suche** geladen; die Anzeige nennt die Ge
 
 ## 5. Flächen: zeichnen, speichern, laden, Verwaltungsgrenzen
 
-![Ablauf der Flächenfunktionen](docs/img/02-flaechen.svg)
+![Ablauf der Flächenfunktionen](readme-assets/02-flaechen.svg)
 
 ### 5.1 Fläche zeichnen
 
@@ -144,7 +144,7 @@ Grenzen der Genauigkeit: Durch die Vereinfachung kann ein schmaler Randstreifen 
 
 ### 6.2 TK25-Raster (MTB / Quadrant / Minutenfeld)
 
-![Aufbau des TK25-Rasters](docs/img/03-mtb-raster.svg)
+![Aufbau des TK25-Rasters](readme-assets/03-mtb-raster.svg)
 
 Checkbox **MTB/Q/MF-Raster** zeichnet dünne Linien: MTB (6′ × 10′) ab Zoomstufe 8, Quadranten (3′ × 5′) ab 11, Minutenfelder (1′ × 1′) ab 13; Beschriftung ab Zoom 9/12/15. Die Rasterdefinition entspricht der MTB-Angabe in der Fundliste: Ursprung 55°54′ N / 5°50′ E, Blattnummer = Zeile von Nord + Spalte von West, Quadrant 1 = NW, 2 = NO, 3 = SW, 4 = SO, Minutenfeld 1–15 zeilenweise von NW. Zahlen sind **berechnet**, nicht amtlich geprüft; bei Unsicherheit mit der amtlichen TK25 abgleichen. Für Gebiete außerhalb des Rasters (Zeile/Spalte > 99) wird nichts angezeigt.
 
@@ -170,7 +170,7 @@ Checkbox **MTB/Q/MF-Raster** zeichnet dünne Linien: MTB (6′ × 10′) ab Zoom
 
 ## 8. Datenflüsse und optionaler Proxy
 
-![Datenflüsse](docs/img/04-datenfluss.svg)
+![Datenflüsse](readme-assets/04-datenfluss.svg)
 
 Beim Laden der Seite und bei Nutzung werden Anfragen **direkt aus deinem Browser** an folgende Dienste gesendet; dabei wird jeweils deine IP-Adresse übermittelt:
 
@@ -196,8 +196,8 @@ Stand der Recherche: 16.11.2026. Keine Rechtsberatung.
 `GBIFArtenfinder.html` enthält eigenen Programmcode sowie – per CDN nachgeladen, nicht eingebettet – Drittbibliotheken (9.2). **Eine Lizenz für den eigenen Code ist noch nicht festgelegt.** Ohne ausdrückliche Lizenz gilt das gesetzliche Urheberrecht (alle Rechte vorbehalten). Die Urheberin bzw. der Urheber muss entscheiden:
 
 ```
-Lizenz des Programmcodes:  [HIER EINTRAGEN, z. B. MIT, EUPL-1.2, GPL-3.0-or-later oder "alle Rechte vorbehalten"]
-Copyright (c) [Jahr] [Name]
+Lizenz des Programmcodes: GNU General Public License, Version 3 oder später (SPDX: GPL-3.0-or-later)
+Copyright (c) 2026 Rainer Theuer
 ```
 
 Wird der Code unter einer Lizenz veröffentlicht, die eine `LICENSE`-Datei erwartet (z. B. MIT), diese Datei dem Projekt beilegen. Die gewählte Lizenz muss mit den Bedingungen der Drittbibliotheken vereinbar sein (alle unten genannten sind permissiv bzw. im Fall der Schrift/Karten nicht Teil des Codes).
