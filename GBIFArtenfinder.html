@@ -253,6 +253,7 @@
             <label class="inline-flex items-center gap-1"><input id="f-photo" type="checkbox" class="accent-emerald-600"> nur mit Foto</label>
             <label class="inline-flex items-center gap-1" title="Koordinatenunsicherheit höchstens"><input id="f-unc" type="checkbox" class="accent-emerald-600"> Genauigkeit ≤ 1 km</label>
             <label class="inline-flex items-center gap-1" title="TK25-Raster: MTB (6'×10'), Quadrant (3'×5'), Minutenfeld (1'×1')"><input id="mtb-grid-toggle" type="checkbox" class="accent-emerald-600"> MTB/Q/MF-Raster</label>
+            <button type="button" id="carto-key-btn" title="Optional: kostenloser CARTO-API-Key (carto.com/basemaps/apikey) schaltet die CARTO-Karte frei" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-semibold">🔑 CARTO-Key</button>
             <button type="button" id="geoloc-btn" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-semibold">📍 Mein Standort</button>
             <button type="button" id="share-btn" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-semibold">🔗 Link kopieren</button>
             <button type="button" id="gbif-portal-btn" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-semibold">↗ GBIF-Portal</button>
@@ -494,25 +495,65 @@
         }
 
         // --- Karte initialisieren (Leaflet) ---
+        if (typeof L === 'undefined') {
+            document.getElementById('map').innerHTML = '<div style="padding:24px;font:14px sans-serif;color:#991b1b">Die Kartenbibliothek (Leaflet von unpkg.com) konnte nicht geladen werden. Bitte Internetverbindung, Werbeblocker, Firewall oder Proxy prüfen und die Seite neu laden.</div>';
+            throw new Error('Leaflet nicht geladen');
+        }
         const map = L.map('map', {
             center: [state.centerLat, state.centerLon],
             zoom: 12,
             zoomControl: true
         });
 
-        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | Daten: <a href="https://www.gbif.org">GBIF.org</a>'
-        }).addTo(map);
+        const IS_FILE = location.protocol === 'file:';
+        const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19, referrerPolicy: 'origin-when-cross-origin',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende | Daten: <a href="https://www.gbif.org">GBIF.org</a>'
+        });
+        // CARTO verlangt seit 2026 einen (kostenlosen) API-Key für Rasterkacheln -> nur mit eigenem Key nutzbar
+        let cartoKey = ''; try { cartoKey = localStorage.getItem('gbifCartoKey') || ''; } catch (_) {}
+        const cartoLayer = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png' + (cartoKey ? '?key=' + encodeURIComponent(cartoKey) : ''), {
+            maxZoom: 20, maxNativeZoom: 18,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        });
+        // Esri-Straßenkarte: ohne Key und ohne Referer nutzbar (Standard)
+        const esriStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19, maxNativeZoom: 18,
+            attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, METI/NASA, EPA, USDA | Daten: <a href="https://www.gbif.org">GBIF.org</a>'
+        });
+        // Lokal geöffnete Datei sendet keinen Referer -> OSM sperrt die Kacheln. Dann CARTO als Standard.
+        (cartoKey ? cartoLayer : esriStreet).addTo(map);
+        let tileErr = 0, tileOk = 0;
+        osmLayer.on('tileload', () => tileOk++);
+        osmLayer.on('tileerror', () => {
+            if (++tileErr >= 6 && !tileOk && map.hasLayer(osmLayer)) {
+                map.removeLayer(osmLayer); esriStreet.addTo(map);
+                showToast('OSM-Kacheln nicht ladbar – wechsle auf die Esri-Straßenkarte.', 'warning');
+            }
+        });
+        // Wird OSM gewählt, kurz prüfen, ob der Server diese Seite sperrt (HTTP 403 ohne Referer) – dann zurück zu CARTO
+        map.on('baselayerchange', async e => {
+            if (e.layer !== osmLayer) return;
+            try {
+                const r = await fetch('https://tile.openstreetmap.org/0/0/0.png', { mode: 'cors' });
+                if (r.status === 403) throw new Error('403');
+            } catch (err) {
+                map.removeLayer(osmLayer); esriStreet.addTo(map);
+                showToast('OpenStreetMap sperrt Anfragen dieser Seite (kein Referer, "Access blocked"). Bitte Datei über http://localhost ausliefern. Esri-Straßenkarte aktiv.', 'warning');
+            }
+        });
+        if (window.ResizeObserver) new ResizeObserver(() => map.invalidateSize()).observe(document.getElementById('map'));
 
         L.control.layers({
             'OpenStreetMap': osmLayer,
-            'Topografie': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: '© OpenTopoMap' }),
-            'Satellit': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: '© Esri' })
+            'Straßenkarte (Esri)': esriStreet,
+            ...(cartoKey ? { 'Straßenkarte (CARTO, eigener Key)': cartoLayer } : {}),
+            'Topografie': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: 'Kartendaten: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende, SRTM | Kartendarstellung: © <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)' }),
+            'Satellit': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles © Esri — Esri, Maxar, Earthstar Geographics, and the GIS User Community' })
         }, null, { position: 'topright' }).addTo(map);
         // Layer-Gruppen für Suchkästchen und Fund-Marker
         const bboxLayerGroup = L.layerGroup().addTo(map);
-        const markersLayerGroup = L.markerClusterGroup({ maxClusterRadius: 40, showCoverageOnHover: false }).addTo(map);
+        const markersLayerGroup = (L.markerClusterGroup ? L.markerClusterGroup({ maxClusterRadius: 40, showCoverageOnHover: false }) : L.layerGroup()).addTo(map);
 
         let searchRectangle = null;
         let handleNW = null;
@@ -2330,6 +2371,13 @@
         polyFile.addEventListener('change', () => { const f = polyFile.files[0]; if (f) f.text().then(loadPolygonFromJson); polyFile.value = ''; });
         map.getContainer().addEventListener('dragover', e => e.preventDefault());
         map.getContainer().addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) f.text().then(loadPolygonFromJson); });
+
+        document.getElementById('carto-key-btn').addEventListener('click', () => {
+            const k = prompt('CARTO-API-Key eingeben (kostenlos unter carto.com/basemaps/apikey). Leer lassen, um den Key zu löschen:', cartoKey);
+            if (k === null) return;
+            try { k.trim() ? localStorage.setItem('gbifCartoKey', k.trim()) : localStorage.removeItem('gbifCartoKey'); } catch (_) {}
+            location.reload();
+        });
 
         // --- GeoJSON-Export der Funde ---
         document.getElementById('geojson-btn').addEventListener('click', () => {
