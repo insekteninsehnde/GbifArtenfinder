@@ -1,334 +1,332 @@
 # GBIF Artenfinder
 
-Interaktive Webanwendung zur räumlichen Recherche von Art- und Familiennachweisen aus der **GBIF-Datenbank**. Sie verbindet eine taxonomische Suche mit einer interaktiven Karte, frei definierbaren Suchgebieten, einer Ergebnisliste, Zusatzinformationen, einer Phänologie-Auswertung und CSV-Export.
+Interaktive Karten-Oberfläche zur Suche von Artnachweisen (Biodiversitätsdaten) aus [GBIF](https://www.gbif.org) in einem frei wählbaren Gebiet. Das gesamte Programm ist **eine einzige HTML-Datei** (`GBIFArtenfinder.html`), die lokal im Browser läuft. Es gibt keine eigene Serverkomponente und keine Datenbank.
 
-> **Technische Einordnung:** Das Projekt ist kein eigenständiges HTML-Framework und keine wiederverwendbare UI-Bibliothek. Es ist eine in einer HTML-Datei gebündelte, clientseitige Webanwendung. Sie verwendet HTML, CSS, Vanilla JavaScript, Leaflet, Tailwind CSS und externe Web-APIs.
+> **Wichtiger Hinweis zu diesem Dokument:** Die Abschnitte zu Lizenzen, Datenschutz und Nutzungsbedingungen (Kapitel 9) wurden nach bestem Wissen und anhand der zum Zeitpunkt der Erstellung (16.11.2026) öffentlich einsehbaren Bedingungen der Anbieter erstellt. Sie sind **keine Rechtsberatung** und können nicht garantieren, dass jede Nutzung rechtlich einwandfrei ist. Bedingungen ändern sich; maßgeblich sind immer die Originaltexte der Anbieter (Links in Kapitel 9). Bei Veröffentlichung, kommerzieller Nutzung oder Weitergabe personenbezogener Daten sollte eine fachkundige Rechtsprüfung erfolgen.
 
-## Inhaltsverzeichnis
+> **Zu den Abbildungen:** Die Bilder in diesem Dokument sind **Schemazeichnungen** (SVG), keine Bildschirmfotos. Sie zeigen Aufbau und Abläufe, nicht das exakte Aussehen. Eigene Screenshots können unter `docs/img/` ergänzt werden.
 
-- [Überblick](#überblick)
-- [Funktionsumfang](#funktionsumfang)
-- [Bedienoberfläche](#bedienoberfläche)
-- [Taxonomische Suche](#taxonomische-suche)
-- [Orts- und Gebietssuche](#orts--und-gebietssuche)
-- [Datenquellen und APIs](#datenquellen-und-apis)
-- [Ergebnisdaten und Zusatzinformationen](#ergebnisdaten-und-zusatzinformationen)
-- [Phänologie und CSV-Export](#phänologie-und-csv-export)
-- [Technischer Aufbau](#technischer-aufbau)
-- [Installation und Start](#installation-und-start)
-- [Optionaler Proxy](#optionaler-proxy)
-- [Grenzen und Hinweise](#grenzen-und-hinweise)
-- [Datenschutz und Betrieb](#datenschutz-und-betrieb)
-- [Mögliche Weiterentwicklung](#mögliche-weiterentwicklung)
+---
 
-## Überblick
+## Inhalt
 
-Der GBIF Artenfinder hilft dabei, Vorkommensmeldungen eines Taxons in einem geografisch abgegrenzten Gebiet zu finden und räumlich auszuwerten. Gesucht werden können beispielsweise:
+1. [Funktionsumfang](#1-funktionsumfang)
+2. [Voraussetzungen und Start](#2-voraussetzungen-und-start)
+3. [Aufbau der Oberfläche](#3-aufbau-der-oberfläche)
+4. [Suche Schritt für Schritt](#4-suche-schritt-für-schritt)
+5. [Flächen: zeichnen, speichern, laden, Verwaltungsgrenzen](#5-flächen-zeichnen-speichern-laden-verwaltungsgrenzen)
+6. [Filter, Raster, Karte](#6-filter-raster-karte)
+7. [Ergebnisliste, Details, Phänologie, Export](#7-ergebnisliste-details-phänologie-export)
+8. [Datenflüsse und optionaler Proxy](#8-datenflüsse-und-optionaler-proxy)
+9. [Rechtliches: Lizenzen, Nutzungsbedingungen, Datenschutz](#9-rechtliches-lizenzen-nutzungsbedingungen-datenschutz)
+10. [Bekannte Einschränkungen](#10-bekannte-einschränkungen)
+11. [Änderungsübersicht](#11-änderungsübersicht)
 
-- wissenschaftliche Artnamen, z. B. `Vanessa cardui`,
-- deutsche Trivialnamen, sofern in den verwendeten GBIF-Taxonomiedaten vorhanden,
-- Familien und andere taxonomische Rangstufen, z. B. `Pieridae`,
-- Gattungen und weitere unterstützte Taxa.
+---
 
-Ein Suchlauf ordnet den eingegebenen Namen möglichst einer GBIF-Taxon-ID zu. Danach werden Fundmeldungen mit Koordinaten aus dem gewählten Gebiet geladen. Die Funde erscheinen als Marker auf der Karte und als Datensätze in der Ergebnisliste.
+## 1. Funktionsumfang
 
-Die HTML-Datei enthält voreingestellte Beispielwerte: **Vanessa cardui (Distelfalter)** und **Sehnde**. Das sind Startwerte und keine festen Einschränkungen.
+- Suche nach **Art oder Familie** (wissenschaftlicher oder deutscher Name, Autovervollständigung über GBIF).
+- Suchgebiet als **Rechteck/Umkreis** (1–20 km Radius oder frei aufgezogen) oder als **frei gezeichnete Fläche** (Polygon mit verschiebbaren Ecken).
+- **Flächen speichern und laden** als lokale GeoJSON-Datei (auch per Drag & Drop auf die Karte).
+- **Verwaltungsgrenze** eines Ortes/einer Region optional anzeigen und als Suchfläche oder als gezeichnete, bearbeitbare Fläche übernehmen.
+- Serverseitige **Filter**: Jahr, Jahreszeit, Aufnahmeart, nur mit Foto, Koordinatengenauigkeit.
+- **TK25-Raster** (MTB, Quadrant, Minutenfeld) als dünne Linien mit Beschriftung.
+- Karte mit **Marker-Clustering** und umschaltbaren Hintergrundkarten.
+- Ergebnisliste mit Textfilter, Sortierung, MTB-Quadrant je Fund, optionalem Nachladen von Details, **Phänologie-Grafik** (Funde pro Kalenderwoche).
+- Export: **CSV** und **GeoJSON**; **Link** zum Teilen der Suche; Sprung ins **GBIF-Portal** mit gleicher Suche.
 
-## Funktionsumfang
+![Schema der Oberfläche](docs/img/01-oberflaeche.svg)
 
-1. **Taxon finden:** Namensvorschläge aus der GBIF-Taxonomie werden während der Eingabe geladen.
-2. **Gebiet bestimmen:** Ein Ort wird über OpenStreetMap gesucht oder direkt auf der Karte ausgewählt.
-3. **Suchfläche festlegen:** Rechteckiger Umkreis oder frei gezeichnetes Polygon.
-4. **GBIF abfragen:** Abruf georeferenzierter Vorkommensmeldungen über die GBIF Occurrence API.
-5. **Ergebnisse darstellen:** Fundmeldungen werden vereinheitlicht, als Kartenmarker und in einer Ergebnisliste gezeigt.
-6. **Auswerten:** Filtern, Sortieren und Phänologie-Diagramm nach Kalenderwochen.
-7. **Weiterverwenden:** CSV-Export und optionales Nachladen von Beobachter- und Ortsdetails.
+---
 
-## Bedienoberfläche
+## 2. Voraussetzungen und Start
 
-Die Oberfläche gliedert sich in eine obere Suchleiste und einen zweigeteilten Arbeitsbereich: links die Karte, rechts die Ergebnisliste mit Auswertungs- und Exportfunktionen.
-
-![Schematische Bedienoberfläche des GBIF Artenfinders](readme-assets/oberflaeche-schematisch.jpg)
-
-*Die Abbildung ist eine eigens erstellte schematische Darstellung der Bedienelemente, kein Screenshot der laufenden Anwendung.*
-
-### Suchleiste
-
-- **Art oder Familie suchen:** wissenschaftlicher Name oder deutscher Name; Vorschläge erscheinen während der Eingabe.
-- **Ort suchen:** Ortsname, Postleitzahl oder Region; alternativ kann die Karte angeklickt werden.
-- **Kästchen-Radius:** 1, 2, 5, 10 oder 20 km. Daraus entsteht zunächst ein Quadrat mit doppelter Kantenlänge: 5 km Radius entsprechen ungefähr 10 × 10 km.
-- **Bei GBIF suchen:** startet die Abfrage mit den aktuellen Parametern.
-
-### Kartenbereich
-
-- Leaflet-Karte mit Zoom- und Verschiebefunktion.
-- Suchgebiet als grün umrandete Fläche.
-- Fundmeldungen als orangefarbene Marker.
-- Umschaltung zwischen Rechteck und frei gezeichneter Fläche.
-- Klick auf einen Fundmarker öffnet ein Informationsfenster.
-
-### Ergebnisbereich
-
-- Trefferzahl und Zusammenfassung des Suchlaufs.
-- Textfilter für geladene Ergebnisse.
-- Sortierung nach Datum (neueste/älteste), Fundort oder Datenquelle.
-- Funktion zum Nachladen von Beobachter- und Ortsdetails.
-- Phänologie-Grafik und CSV-Download.
-
-## Taxonomische Suche
-
-Die Anwendung kombiniert mehrere GBIF-Endpunkte:
-
-- `species/suggest` für Namensvorschläge,
-- `species/search` für die Suche nach deutschen Trivialnamen im verwendeten deutschen Namensdatensatz,
-- `species/match` zur Zuordnung eines Namens zu einem Taxon und als Fallback bei Freitext.
-
-Vorschläge zeigen – soweit verfügbar – wissenschaftlichen Namen, deutschen Namen, Rangstufe und Taxon-ID. Ähnliche oder unscharfe Treffer werden gekennzeichnet. Bei Auswahl einer höheren Rangstufe wie einer Familie umfasst die Suche die darunterliegenden Taxa entsprechend der GBIF-Taxonomie.
-
-## Orts- und Gebietssuche
-
-### Ortsauflösung
-
-Die Ortsauflösung verwendet **Nominatim**, den Geocoding-Dienst von OpenStreetMap. Nach erfolgreicher Suche wird die Karte auf den Ort zentriert und das Suchgebiet in der gewählten Größe erstellt.
-
-Ein Klick auf die Karte setzt den Mittelpunkt des Suchrechtecks neu. Eine Änderung der Radiusauswahl passt die Abmessungen um den aktuellen Mittelpunkt an.
-
-### Rechtecksuche
-
-Im Rechteckmodus kann die Fläche interaktiv angepasst werden:
-
-- Vier Eckgriffe verändern Breite und Höhe.
-- Der Griff in der Mitte verschiebt das gesamte Rechteck.
-- Nach dem Loslassen eines Griffs wird die Suche automatisch erneut ausgeführt.
-- Bei einer manuell veränderten Fläche wechselt die Radiusanzeige auf „Individuell gezogen“.
-
-Die Anwendung zeigt die geografischen Grenzen als Breiten- und Längengrade sowie die ungefähren Abmessungen in Kilometern an.
-
-### Freie Flächensuche (Polygon)
-
-Im Polygonmodus wird die Suchfläche durch Klicks auf die Karte aufgebaut:
-
-- Mindestens drei Eckpunkte sind erforderlich.
-- **Schließen & suchen** beendet die Zeichnung und startet die Abfrage.
-- **Punkt zurück** nimmt den letzten Punkt zurück bzw. öffnet eine geschlossene Fläche wieder.
-- **Neu** löscht die aktuelle Zeichnung.
-- Eckpunkte können verschoben werden.
-- Ein Klick auf einen weißen Zwischenpunkt einer Kante fügt dort eine zusätzliche Ecke ein.
-- Rechtsklick bzw. Kontextmenü auf einen Eckpunkt löscht ihn; eine geschlossene Fläche behält mindestens drei Ecken.
-
-Vor dem Senden wird geprüft, ob sich Polygonkanten überschneiden. Für GBIF wird die Fläche als WKT-`POLYGON` übergeben. Der äußere Ring wird in der von GBIF erwarteten Orientierung aufgebaut. Zusätzlich prüft die Anwendung Fundkoordinaten lokal auf Zugehörigkeit zum Polygon.
-
-## Karte und Geometrien
-
-Die Kartendarstellung basiert auf **Leaflet 1.9.4**. Als Kartenhintergrund werden Kacheln von OpenStreetMap verwendet. Suchfläche und Fundmarker liegen in getrennten Leaflet-Layer-Gruppen und können unabhängig voneinander aktualisiert werden.
-
-![Architektur und Datenfluss](readme-assets/architektur.svg)
-
-*Die Abbildung zeigt die logische Architektur und die externen Datenverbindungen.*
-
-## Datenquellen und APIs
-
-| Dienst / Bibliothek | Aufgabe |
+| Punkt | Angabe |
 |---|---|
-| **GBIF Species API** | Taxonomische Namensvorschläge, Namenssuche und Taxon-Auflösung |
-| **GBIF Occurrence API** | Abruf georeferenzierter Fundmeldungen |
-| **GBIF Verbatim API** | Originalfelder eines Funddatensatzes beim Nachladen von Details |
-| **OpenStreetMap-Kartenkacheln** | Kartengrundlage |
-| **Nominatim** | Orts-Suche und Reverse-Geocoding |
-| **iNaturalist API** | Ergänzende Beobachter-/Ortsangaben bei passenden iNaturalist-Nachweis-URLs |
-| **Leaflet 1.9.4** | Interaktive Karte, Layer, Rechtecke, Polygone und Marker |
-| **Tailwind CSS (CDN)** | Layout und Gestaltung |
-| **Google Fonts – Inter** | Schriftart |
+| Browser | aktueller Desktop- oder Mobilbrowser (Chrome, Firefox, Edge, Safari) |
+| Internet | **erforderlich** (GBIF, Kartenkacheln, Nominatim, CDN-Bibliotheken) |
+| Installation | keine; Datei `GBIFArtenfinder.html` per Doppelklick öffnen |
+| Optional | Python 3 für den lokalen Proxy (Kapitel 8) |
 
-Die Fundabfrage verwendet `https://api.gbif.org/v1/occurrence/search`. Es werden nur Datensätze mit Koordinaten angefordert (`hasCoordinate=true`).
+**Hinweis zu `file://`:** Wird die Datei direkt von der Festplatte geöffnet, senden Browser keinen Referer. Manche Dienste (insbesondere die OSM-Kachelserver und Nominatim) verlangen laut ihren Richtlinien eine Identifikation der Anwendung. Dadurch können Kacheln oder Ortssuche ausbleiben oder blockiert werden. Abhilfe: Datei über einen eigenen kleinen Webserver ausliefern (z. B. `python -m http.server`) oder eine eigene Kachel-/Geocoding-Quelle eintragen (siehe Kapitel 9.4).
 
-### Abrufmenge
+---
 
-Der Code lädt Fundmeldungen in Seiten zu je 300 Datensätzen und begrenzt den Abruf auf **maximal 1.000 Datensätze pro Suchlauf**. Gibt es mehr Treffer, zeigt die Anwendung die Zahl der geladenen Datensätze im Verhältnis zur von GBIF gemeldeten Trefferzahl an. Die Liste ist dann nicht vollständig.
+## 3. Aufbau der Oberfläche
 
-## Ergebnisdaten und Zusatzinformationen
+**Kopfbereich**
 
-Die Funktion `normalizeOccurrence()` überführt GBIF-Rohdaten in ein einheitliches internes Format. Dieses Format wird für Karte, Ergebnisliste, Popups, Phänologie und CSV verwendet.
+1. **Art oder Familie suchen** – Eingabe mit Vorschlägen; ein Klick auf einen Vorschlag setzt den Taxon-Schlüssel. Ohne Auswahl wird der Name bei GBIF abgeglichen.
+2. **Ort suchen** – Ort, PLZ oder Region; „Ort finden“ setzt das Suchkästchen dorthin. Alternativ auf die Karte klicken.
+3. **Kästchen-Radius** – 1, 2, 5, 10, 20 km Radius oder „Individuell gezogen“.
+4. **Bei GBIF suchen** – startet die Suche.
+5. **Verwaltungsgrenze** – Checkbox und zwei Übernahme-Buttons (Kapitel 5.4).
+6. **Filterzeile** – Jahr, Monate, Aufnahmeart, Foto, Genauigkeit, MTB/Q/MF-Raster, Standort, Link, GBIF-Portal, GeoJSON.
 
-Je nach Verfügbarkeit können enthalten sein:
+**Kartenbereich** mit Modusleiste (`▭ Rechteck`, `⬠ Fläche zeichnen`, `✓ Schließen & suchen`, `↶ Punkt zurück`, `✕ Neu`, `💾 Fläche speichern`, `📂 Fläche laden`) und Ebenenwahl oben rechts (OpenStreetMap, Topografie, Satellit).
 
-- wissenschaftlicher und deutscher Name,
-- Datum bzw. Jahr, Monat und Tag,
-- Fundort, Gemeinde, Landkreis und Bundesland,
-- Koordinaten in Dezimalgrad und Grad-Minuten-Sekunden,
-- MTB-/Quadranten-/Minutenfeld-Angaben, die aus den Koordinaten berechnet werden,
-- Koordinatenunsicherheit,
-- Beobachter bzw. Melder, sofern in den Daten vorhanden,
-- Anzahl der Individuen, Geschlecht und Lebensstadium,
-- Datenquelle, Datensatzname, Institution und Lizenz,
-- GBIF-Datensatz-ID und Link zum GBIF-Eintrag,
-- Nachweis-Link und – sofern vorhanden – Bild-URL.
+**Ergebnisbereich** mit Trefferzahl, Textfilter, Sortierung, „🔎 Details nachladen“, CSV-Download und der Phänologie-Grafik.
 
-### Fundmarker und Popups
+---
 
-Jeder Fund mit gültigen Koordinaten wird als Marker auf der Karte angezeigt. Das Popup kann Artname, Funddatum, Fundort, Koordinaten, Rasterangaben, Beobachter, Datenquelle, Belegbild und Links enthalten. Koordinaten und MTB-Kennung lassen sich aus dem Popup in die Zwischenablage kopieren.
+## 4. Suche Schritt für Schritt
 
-### Details nachladen
+1. **Art eingeben** (z. B. `Vanessa cardui`, `Pieridae`, `Weißlinge`, `Rotmilan`) und einen Vorschlag wählen.
+2. **Ort eingeben** und „Ort finden“ klicken, oder auf die Karte klicken. Es erscheint ein Suchkästchen mit dem gewählten Radius.
+3. Optional **Filter** setzen (Kapitel 6.1). Jede Filteränderung startet die Suche neu.
+4. **Bei GBIF suchen** klicken. Der Fortschritt wird angezeigt; Treffer erscheinen als Marker bzw. Cluster und in der Liste.
+5. Das Rechteck lässt sich an den Griffen ziehen („Individuell gezogen“).
 
-Die Detailanreicherung ist optional, da sie zusätzliche Netzwerkabfragen auslöst. Für einen Fund versucht die Anwendung Informationen aus folgenden Quellen zu ergänzen:
+Es werden höchstens **1.000 Funde pro Suche** geladen; die Anzeige nennt die Gesamtzahl bei GBIF. Bei größeren Treffermengen Gebiet verkleinern oder Zeitfilter nutzen.
 
-1. GBIF-Verbatim-Felder,
-2. iNaturalist API, wenn der Nachweis-Link auf eine iNaturalist-Beobachtung verweist,
-3. die Original-Nachweis-Seite, sofern sie direkt oder über den Proxy lesbar ist,
-4. Nominatim-Reverse-Geocoding anhand der Fundkoordinaten.
+---
 
-Die Schaltfläche **Details nachladen** ergänzt die aktuell gefilterten Funde, allerdings höchstens 50 pro Sammellauf. Einzelne Datensätze können ebenfalls separat angereichert werden. Quellen werden in der Oberfläche kenntlich gemacht; zusätzliche Angaben sind nicht garantiert.
+## 5. Flächen: zeichnen, speichern, laden, Verwaltungsgrenzen
 
-## Phänologie und CSV-Export
+![Ablauf der Flächenfunktionen](docs/img/02-flaechen.svg)
 
-### Phänologie
+### 5.1 Fläche zeichnen
 
-Die optionale Phänologie-Grafik stellt die Anzahl der Funde je ISO-Kalenderwoche dar. Alle geladenen Jahre werden zusammengefasst.
+1. `⬠ Fläche zeichnen` wählen.
+2. Auf der Karte nacheinander Eckpunkte setzen. `↶ Punkt zurück` entfernt den letzten.
+3. Mit mindestens drei Punkten auf den **Startpunkt** klicken oder `✓ Schließen & suchen`. Die Suche startet.
+4. Nachbearbeiten: Ecke **ziehen** (Verschieben), **Rechtsklick** (Löschen, mindestens drei Ecken), kleinen **Kantenpunkt anklicken** (Ecke einfügen). Selbstüberschneidende Flächen werden von GBIF nicht akzeptiert.
+5. `✕ Neu` verwirft die Fläche.
 
-Soweit GBIF-Datensätze ein Lebensstadium enthalten, werden die Funde nach Stadien klassifiziert und als gestapelte Balken visualisiert. Über die Legende können einzelne Stadien ein- oder ausgeblendet werden.
+### 5.2 Fläche speichern
 
-Die Grafik zeigt die zeitliche Verteilung der in den geladenen GBIF-Daten enthaltenen Meldungen. Sie ist keine standardisierte Populationszählung. Beobachtungsaufwand, Datenabdeckung und Meldeverhalten beeinflussen die Werte.
+`💾 Fläche speichern` fragt nach einem Namen und lädt die Datei `<Name>.geojson.json` herunter. Sie liegt **nur lokal** auf deinem Rechner; die Anwendung sendet sie nirgendwohin.
 
-### CSV-Export
+### 5.3 Fläche laden
 
-Über **CSV herunterladen** werden die geladenen Funddatensätze exportiert. Der Export ist für Tabellenkalkulationen, GIS-Programme oder Statistiksoftware gedacht.
+`📂 Fläche laden` öffnet einen Dateidialog; alternativ eine Datei **auf die Karte ziehen**. Akzeptiert werden GeoJSON-Dateien mit `Polygon` oder `MultiPolygon` (bei `FeatureCollection`: erstes Polygon; bei `MultiPolygon`: erster Teil). Die Fläche wird geladen, die Karte zoomt hin, die Suche startet.
 
-Der Export bezieht sich auf die im aktuellen Suchlauf geladenen Datensätze (bis zur Grenze von 1.000). Der Textfilter und die Sortierung dienen der Darstellung der Liste; der Export greift auf `state.allOccurrences` zu und exportiert damit den geladenen Gesamtdatensatz des Suchlaufs.
+Format (GeoJSON nach [RFC 7946](https://www.rfc-editor.org/rfc/rfc7946), Koordinaten als `[Länge, Breite]`):
 
-## Technischer Aufbau
+```json
+{
+  "type": "FeatureCollection",
+  "features": [{
+    "type": "Feature",
+    "properties": { "name": "Suchfläche", "saved": "2026-11-16T10:00:00.000Z" },
+    "geometry": { "type": "Polygon", "coordinates": [[[9.96, 52.31], [10.02, 52.31], [10.02, 52.35], [9.96, 52.31]]] }
+  }]
+}
+```
 
-### Technologien
+### 5.4 Verwaltungsgrenze
 
-| Technologie | Verwendung |
+1. Im Ortsfeld einen Ort oder eine Region eingeben, **Verwaltungsgrenze anzeigen** aktivieren und „Ort finden“ bzw. Enter wählen.
+2. Die Grenze erscheint violett gestrichelt (Quelle: OpenStreetMap über Nominatim; es wird der erste Treffer mit Flächengeometrie verwendet, bei mehrdeutigen Namen kann das ein falsches Gebiet sein – Zusatz wie „Sehnde, Niedersachsen“ hilft).
+3. Zwei Übernahmearten:
+
+| Button | Wirkung |
 |---|---|
-| HTML5 | Seitenstruktur und Bedienelemente |
-| CSS | projektspezifische Karten-, Marker- und Popup-Anpassungen |
-| JavaScript (Vanilla JS) | Anwendungszustand, Ereignisse, API-Aufrufe und Darstellung |
-| Tailwind CSS via CDN | Utility-Klassen für Layout und Design |
-| Leaflet.js 1.9.4 | interaktive Kartenlogik |
-| SVG | Icons und Diagrammvisualisierung |
-| Fetch API | HTTP-Anfragen an externe Dienste |
-| Local Storage | Speicherung der optionalen Proxy-Einstellungen |
+| **Als gezeichnete Fläche** | Vereinfachte Grenze (ca. 60 Ecken, größter Teil des Gebiets) wird zu einer normalen, **bearbeitbaren** Fläche. |
+| **Als Suchfläche (exakte Grenze)** | Abfrage an GBIF mit vereinfachter Fläche (ca. 150 Ecken); angezeigt werden anschließend **nur Funde innerhalb der vollen, exakten Grenze** (alle Teilflächen). Das Bearbeiten einer Ecke hebt den exakten Filter auf. |
 
-### Architektur
+Grenzen der Genauigkeit: Durch die Vereinfachung kann ein schmaler Randstreifen bei der GBIF-Abfrage fehlen; Löcher (Enklaven) werden nicht herausgerechnet.
 
-Das Projekt ist als einzelne HTML-Datei aufgebaut. CSS und JavaScript sind direkt in `GBIFArtenfinder.html` eingebettet. In der vorliegenden Datei sind keine Build-Pipeline, kein Paketmanifest und kein Frontend-Framework wie React, Vue oder Angular erkennbar.
+---
 
-Zentrale Bestandteile:
+## 6. Filter, Raster, Karte
 
-- **`state`:** zentraler Anwendungszustand (Kartenmittelpunkt, Radius, Suchgrenzen, Taxon, Funddaten und Geometriemodus).
-- **Karteninitialisierung:** Leaflet-Karte, OpenStreetMap-Kacheln und Layer-Gruppen.
-- **Bounding-Box-Funktionen:** Berechnung, Darstellung und Bearbeitung des Rechtecks.
-- **Polygon-Funktionen:** Zeichnen, Schließen, Validieren und Umwandeln in WKT.
-- **Taxon-Suche:** Vorschläge und Taxon-Matching über GBIF.
-- **`fetchGbifOccurrences()`:** Abruf der Fundmeldungen.
-- **`normalizeOccurrence()`:** Aufbereitung der GBIF-Rohdaten.
-- **Rendering-Funktionen:** Marker, Popups, Ergebnisliste und Diagramm.
-- **Detailanreicherung:** zusätzliche Informationen aus GBIF, iNaturalist, Nachweis-Seiten und OSM.
-- **CSV-Export:** Ausgabe der geladenen Datensätze.
+### 6.1 Filter (serverseitig bei GBIF)
 
-### Was ist hier Framework, Bibliothek und Anwendung?
+| Filter | GBIF-Parameter | Bedeutung |
+|---|---|---|
+| Jahr von/bis | `year` | Bereich, z. B. 2015–2025 |
+| Monate | `month` | Frühling 3–5, Sommer 6–8, Herbst 9–11, Winter 12, 1, 2 |
+| Aufnahmeart | `basisOfRecord` | Beobachtung, Maschinell, Präparat/Beleg, Literatur |
+| nur mit Foto | `mediaType=StillImage` | nur Funde mit Bild |
+| Genauigkeit ≤ 1 km | `coordinateUncertaintyInMeters=0,1000` | schließt ungenaue Koordinaten aus; Funde ohne Angabe können dadurch ebenfalls entfallen |
 
-- **HTML** beschreibt die Struktur der Seite.
-- **Tailwind CSS** ist eine CSS-Utility-Bibliothek, kein HTML-Framework.
-- **Leaflet** ist eine JavaScript-Bibliothek für interaktive Karten.
-- **GBIF und OpenStreetMap/Nominatim** sind externe Daten- bzw. Webdienste.
-- **Der GBIF Artenfinder** ist die konkrete Anwendung, die diese Bausteine zusammenführt.
+### 6.2 TK25-Raster (MTB / Quadrant / Minutenfeld)
 
-## Installation und Start
+![Aufbau des TK25-Rasters](docs/img/03-mtb-raster.svg)
 
-### Voraussetzungen
+Checkbox **MTB/Q/MF-Raster** zeichnet dünne Linien: MTB (6′ × 10′) ab Zoomstufe 8, Quadranten (3′ × 5′) ab 11, Minutenfelder (1′ × 1′) ab 13; Beschriftung ab Zoom 9/12/15. Die Rasterdefinition entspricht der MTB-Angabe in der Fundliste: Ursprung 55°54′ N / 5°50′ E, Blattnummer = Zeile von Nord + Spalte von West, Quadrant 1 = NW, 2 = NO, 3 = SW, 4 = SO, Minutenfeld 1–15 zeilenweise von NW. Zahlen sind **berechnet**, nicht amtlich geprüft; bei Unsicherheit mit der amtlichen TK25 abgleichen. Für Gebiete außerhalb des Rasters (Zeile/Spalte > 99) wird nichts angezeigt.
 
-- Aktueller Browser (Firefox, Chrome, Edge oder Safari).
-- Internetverbindung, da Kartenkacheln, Schriftarten und API-Daten von externen Diensten geladen werden.
-- Für die normale Suche ist kein eigener Server und keine Datenbank erforderlich.
+### 6.3 Karte
 
-### Schnellstart
+- **Cluster:** Nahe Marker werden zusammengefasst; Zoom löst sie auf.
+- **Hintergrund:** OpenStreetMap, Topografie (OpenTopoMap), Satellit (Esri). Hinweise zu den Bedingungen in Kapitel 9.4.
+- **📍 Mein Standort:** setzt ein Suchkästchen auf den Browser-Standort (Freigabe durch den Nutzer erforderlich).
+- **🔗 Link kopieren:** schreibt Art, Gebiet (Rechteck oder Fläche) und Filter in den URL-Teil nach `#` und kopiert die Adresse. Beim Öffnen eines solchen Links wird die Suche wiederhergestellt. Bei lokalen Dateien enthält der Link den lokalen Pfad.
+- **↗ GBIF-Portal:** öffnet gbif.org mit Taxon und Gebiet.
 
-1. `GBIFArtenfinder.html` lokal speichern.
-2. Datei im Browser öffnen.
-3. Eine Art oder Familie eingeben und einen Vorschlag auswählen (oder den Namen per Enter übernehmen).
-4. Einen Ort suchen oder das Suchgebiet auf der Karte setzen.
-5. Radius bzw. Polygonfläche festlegen.
-6. **Bei GBIF suchen** ausführen.
+---
 
-Je nach Browser- und Sicherheitskonfiguration kann ein lokaler HTTP-Server zuverlässiger sein als `file://`.
+## 7. Ergebnisliste, Details, Phänologie, Export
 
-### Optionaler lokaler HTTP-Server
+- **Liste:** zeigt je Fund Art, Datum, Ort, Datensatz sowie MTB-Quadrant. Textfilter durchsucht u. a. Ortsteil, Quelle, Jahr. Sortierung: neueste/älteste, Fundort, Datenquelle.
+- **🔎 Details nachladen:** für bis zu 50 aktuell gefilterte Funde werden Beobachter- und Ortsdetails über GBIF (`/verbatim`), Nominatim (Rückwärtssuche, gedrosselt auf ca. eine Anfrage je 1,1 s), die iNaturalist-API (bei iNaturalist-Nachweisen) und – nur mit aktiviertem Proxy – Nachweis-Seiten nachgeladen. **Dabei können personenbezogene Daten (Beobachternamen) entstehen**, siehe Kapitel 9.6.
+- **Phänologie-Grafik:** Balkendiagramm der Funde je Kalenderwoche, alle Jahre zusammengefasst, nach Lebensstadium eingefärbt, soweit erkennbar. Die Höhe spiegelt auch die Beobachtungsintensität (viel Beobachter im Sommer), nicht allein die Häufigkeit der Art.
+- **CSV:** u. a. Datensatz, Rechteinhaber, **Lizenz** je Fund. Diese Spalten sollten bei Weitergabe erhalten bleiben (Kapitel 9.3).
+- **GeoJSON-Export:** alle Funde mit Koordinaten als Punkte; Eigenschaften einschließlich Lizenzfeld.
 
-Im Verzeichnis der HTML-Datei:
+---
 
-```bash
-python -m http.server 8000
+## 8. Datenflüsse und optionaler Proxy
+
+![Datenflüsse](docs/img/04-datenfluss.svg)
+
+Beim Laden der Seite und bei Nutzung werden Anfragen **direkt aus deinem Browser** an folgende Dienste gesendet; dabei wird jeweils deine IP-Adresse übermittelt:
+
+| Dienst | Zweck | Gesendet (Auszug) |
+|---|---|---|
+| `api.gbif.org` | Artsuche, Funde, Namensabgleich, `/verbatim` | Suchbegriff, Taxon, Gebiet (Rechteck oder WKT-Polygon), Filter, Fund-ID |
+| `nominatim.openstreetmap.org` | Ortssuche, Verwaltungsgrenze, Rückwärtssuche | Suchtext, Koordinaten einzelner Funde |
+| Kartenkacheln (OSM, OpenTopoMap, Esri) | Hintergrundkarte | sichtbarer Kartenausschnitt (Kachelkoordinaten) |
+| `api.inaturalist.org` | nur bei „Details nachladen“ und iNaturalist-Funden | Beobachtungsnummer |
+| `unpkg.com`, `cdn.tailwindcss.com` | Leaflet, Cluster-Plugin, Tailwind | Standard-Webanfrage |
+| `fonts.googleapis.com`, `fonts.gstatic.com` | Schriftart Inter | Standard-Webanfrage |
+
+**Proxy (optional):** In den Einstellungen „Proxy für Nachweis-Seiten“ kann ein lokaler Proxy (Standard `http://127.0.0.1:8787`) eingetragen werden, um Nachweis-Seiten abzurufen, die der Browser wegen CORS nicht direkt laden darf; optional mit Headless-Browser (Playwright/Chromium). Das Skript `proxy_server.py` ist **nicht Bestandteil dieser Lieferung**. Ohne Proxy funktioniert alles andere. Einzige gespeicherte Einstellung: `localStorage`-Eintrag `gbifProxyPrefs` (URL, Haken). Zur rechtlichen Einordnung des automatisierten Seitenabrufs siehe Kapitel 9.7.
+
+---
+
+## 9. Rechtliches: Lizenzen, Nutzungsbedingungen, Datenschutz
+
+Stand der Recherche: 16.11.2026. Keine Rechtsberatung.
+
+### 9.1 Lizenz dieses Programms
+
+`GBIFArtenfinder.html` enthält eigenen Programmcode sowie – per CDN nachgeladen, nicht eingebettet – Drittbibliotheken (9.2). **Eine Lizenz für den eigenen Code ist noch nicht festgelegt.** Ohne ausdrückliche Lizenz gilt das gesetzliche Urheberrecht (alle Rechte vorbehalten). Die Urheberin bzw. der Urheber muss entscheiden:
+
+```
+Lizenz des Programmcodes:  [HIER EINTRAGEN, z. B. MIT, EUPL-1.2, GPL-3.0-or-later oder "alle Rechte vorbehalten"]
+Copyright (c) [Jahr] [Name]
 ```
 
-Dann im Browser öffnen:
+Wird der Code unter einer Lizenz veröffentlicht, die eine `LICENSE`-Datei erwartet (z. B. MIT), diese Datei dem Projekt beilegen. Die gewählte Lizenz muss mit den Bedingungen der Drittbibliotheken vereinbar sein (alle unten genannten sind permissiv bzw. im Fall der Schrift/Karten nicht Teil des Codes).
 
-```text
-http://localhost:8000/GBIFArtenfinder.html
+### 9.2 Drittsoftware (Code)
+
+| Komponente | Version | Lizenz | Urheberrechtsvermerk |
+|---|---|---|---|
+| [Leaflet](https://leafletjs.com) | 1.9.4 | BSD-2-Clause | © 2010–2023 Vladimir Agafonkin; © 2010–2011 CloudMade |
+| [Leaflet.markercluster](https://github.com/Leaflet/Leaflet.markercluster) | 1.5.3 | MIT | © 2012 David Leaver |
+| [Tailwind CSS](https://tailwindcss.com) (Play-CDN-Skript) | per CDN, unversioniert | MIT | © Tailwind Labs, Inc. |
+| [Inter](https://rsms.me/inter/) (Schrift über Google Fonts) | per Google Fonts | SIL Open Font License 1.1 | © The Inter Project Authors |
+
+Die Vermerke wurden aus dem Gedächtnis des Verfassers und öffentlichen Projektangaben übernommen; **vor einer Weitergabe bitte gegen die LICENSE-Dateien der jeweiligen Projekte prüfen**, insbesondere Jahreszahlen.
+
+Da die Bibliotheken nur geladen und nicht in die Datei kopiert werden, besteht für diese Datei keine Pflicht, den Lizenztext mitzuliefern. **Wer die Bibliotheken in die Datei einbettet oder zusammen mit der Datei verteilt, muss Copyright-Hinweis und Lizenztext beilegen.** Zur Orientierung der Lizenztext von Leaflet (BSD-2-Clause):
+
+```
+BSD 2-Clause License
+
+Copyright (c) 2010-2023, Vladimir Agafonkin
+Copyright (c) 2010-2011, CloudMade
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice, this
+   list of conditions and the following disclaimer in the documentation and/or
+   other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
-## Optionaler Proxy
+Für MIT-lizenzierte Komponenten gilt: Copyright-Vermerk und der MIT-Lizenztext müssen bei Weitergabe des Codes enthalten sein. Das Tailwind-Play-CDN-Skript ist laut Tailwind **nicht für den Produktivbetrieb gedacht**; für öffentliche Angebote CSS vorab kompilieren.
 
-Der Proxy ist **nicht** für die normale GBIF-Artsuche erforderlich. Er wird nur benötigt, wenn externe Original-Nachweis-Seiten wegen Browser-CORS-Regeln nicht direkt ausgelesen werden können.
+### 9.3 Fundmeldungen (GBIF-Daten)
 
-Die HTML-Oberfläche erwartet standardmäßig einen lokalen Dienst unter `http://127.0.0.1:8787`. Die Proxy-Steuerung bietet:
+- **Lizenz je Datensatz:** GBIF stellt Daten unter **CC0**, **CC BY** oder **CC BY-NC** bereit. Die Lizenz gilt für den jeweiligen Datensatz bzw. Fund und steht im Feld `license` (in der Anwendung als Spalte „Lizenz“ in CSV und GeoJSON). Es gibt **keine einheitliche Lizenz** für alle Ergebnisse.
+- **Namensnennung (CC BY/CC BY-NC):** Datenherausgeber/Rechteinhaber angemessen nennen. Die Spalten „Datensatz“ und „Rechteinhaber“ im Export dienen dazu und sollten bei Weitergabe nicht entfernt werden.
+- **Nicht-kommerziell (CC BY-NC):** Nutzung nur nicht-kommerziell. Die Abgrenzung ist nicht einheitlich; GBIF empfiehlt Nutzung nach Treu und Glauben und im Zweifel Rückfrage beim Datenherausgeber.
+- **Data User Agreement:** Bei der Nutzung von GBIF-vermittelten Daten gilt das [GBIF Data User Agreement](https://www.gbif.org/terms/data-user): u. a. Herkunftsangaben bei Weitergabe beibehalten, Lizenzbedingungen der Datenherausgeber beachten (sie haben im Konfliktfall Vorrang), keine Störung der API, Nutzung auf eigenes Risiko, Gewähr für Datenqualität wird nicht übernommen.
+- **Zitierung:** GBIF empfiehlt, die **empfohlene Zitierung** der Datensätze bzw. eines GBIF-Downloads mit DOI zu verwenden. Die Anwendung erzeugt **keine DOI-Zitierung**; wer für Publikationen zitieren muss, sollte die Suche im GBIF-Portal (Button „↗ GBIF-Portal“) als **GBIF-Download** erneut ausführen, um eine zitierfähige DOI zu erhalten.
+- **Artnamen:** Die Namensvorschläge stammen aus der GBIF-Taxonomie (u. a. GBIF Backbone Taxonomy, CC BY 4.0, GBIF Secretariat) und der Suche über deutsche Trivialnamen.
+- **Datenqualität:** Koordinaten und Bestimmungen sind unterschiedlich zuverlässig; Funde können fehlerhaft, ungenau oder generalisiert sein (z. B. Schutz sensibler Arten). Kein Anspruch auf Vollständigkeit.
 
-- Aktivieren/Deaktivieren,
-- Anpassung der Proxy-URL,
-- optionales Rendern der Zielseite in einem Headless-Browser,
-- Verbindungstest über `/health`.
+### 9.4 Karten, Geocoding, Grenzen
 
-Die HTML-Datei nennt folgende Startschritte:
+**OpenStreetMap-Daten** stehen unter der **Open Database License (ODbL) 1.0**. Zwingend: Quellenangabe „© OpenStreetMap-Mitwirkende“ mit Link zu <https://www.openstreetmap.org/copyright> (in der Karte enthalten). Abgeleitete Datenbanken (z. B. gespeicherte Verwaltungsgrenzen, die du weitergibst) unterliegen den ODbL-Bedingungen (Namensnennung, Weitergabe unter gleichen Bedingungen). Die vom Programm gespeicherten Flächen können aus OSM-Grenzen abgeleitet sein; bei Weitergabe daher Quelle und ODbL nennen.
 
-```bash
-pip install playwright
-python -m playwright install chromium
-python proxy_server.py
-```
+**OSM-Kacheln** (`tile.openstreetmap.org`): Es gilt die [Tile Usage Policy](https://operations.openstreetmap.org/policies/tiles/) (kein Massen-Download, Cache-Header beachten, bei Webseiten ein gültiger Referer). Die ausgelieferten Kacheln stehen laut OSM-Wiki unter CC BY-SA. Für Anwendungen mit vielen Nutzern oder Produktivbetrieb einen eigenen oder kommerziellen Kachelanbieter verwenden.
 
-**Wichtig:** `proxy_server.py` ist eine separate Komponente und liegt der hier dokumentierten HTML-Datei nicht bei. Die README beschreibt daher nur die von der HTML-Datei erwartete Schnittstelle und die im UI angezeigten Startschritte. Sie bestätigt nicht, dass ein passender Proxy-Server bereits vorhanden oder produktionssicher implementiert ist.
+**OpenTopoMap:** Kartendaten © OpenStreetMap-Mitwirkende, SRTM; Kartendarstellung © OpenTopoMap, Lizenz **CC BY-SA 3.0**. Die Anwendung zeigt die verlangte Quellenangabe an. Es gilt fairer Gebrauch; keine Massenabrufe.
 
-## Grenzen und Hinweise
+**Esri World Imagery (Satellit):** Dienst und Bilder unterliegen den Nutzungsbedingungen von Esri und den Bildanbietern (Quellenangabe: „Esri, Maxar, Earthstar Geographics, and the GIS User Community“). **Die Bedingungen für den Abruf der Kacheln ohne Esri-Konto bzw. API-Schlüssel wurden hier nicht abschließend geprüft.** Für Veröffentlichung oder kommerzielle Nutzung vorab die aktuellen Esri-Bedingungen prüfen oder die Ebene entfernen.
 
-- **Maximal 1.000 Funde je Suchlauf:** weitere GBIF-Treffer werden in dieser Version nicht vollständig geladen.
-- **Nur georeferenzierte Datensätze:** Meldungen ohne Koordinaten bleiben durch `hasCoordinate=true` unberücksichtigt.
-- **Datenqualität:** GBIF-Daten stammen von vielen Datenlieferanten. Namen, Ortsangaben, Datumswerte, Koordinaten und Beobachterinformationen können unvollständig oder fehlerhaft sein.
-- **Koordinatenunschärfe:** die angegebene Unsicherheit kann die Interpretation feiner Rasterangaben beeinflussen.
-- **Polygon-Geometrie:** sehr komplexe oder von GBIF abgelehnte Polygone können zu einem API-Fehler führen.
-- **Externe Verfügbarkeit:** GBIF, Nominatim, OpenStreetMap-Kacheln und iNaturalist sind externe Dienste. Störungen, Limits und Änderungen liegen außerhalb der Anwendung.
-- **CORS:** Browser dürfen externe Webseiten nicht beliebig auslesen. Das Nachladen von Nachweis-Seiten kann daher ohne Proxy scheitern.
-- **Phänologie ist meldeabhängig:** die Zahl der Meldungen hängt auch vom Beobachtungs- und Meldeaufwand ab.
-- **Keine zentrale Datenbank:** die Suchergebnisse werden zur Laufzeit im Browser gehalten; eine dauerhafte zentrale Speicherung ist in der HTML-Datei nicht implementiert.
+**Nominatim** (Ortssuche, Verwaltungsgrenzen, Rückwärtssuche): Der öffentliche Server ([Usage Policy](https://operations.osmfoundation.org/policies/nominatim/)) erlaubt höchstens **eine Anfrage pro Sekunde je Anwendung**, verlangt eine **gültige Referer- oder User-Agent-Angabe**, **Zwischenspeichern** wiederholter Anfragen, deutlich sichtbare Quellenangabe und untersagt Autocomplete und Massenabfragen. Der Ist-Zustand dieser Anwendung:
 
-## Datenschutz und Betrieb
+- Die Rückwärtssuche wird auf ca. 1,1 s getaktet.
+- **Ortssuche und Grenzabruf sind nicht gedrosselt und nicht zwischengespeichert.**
+- Ein Browser kann den User-Agent nicht anpassen; bei `file://` fehlt der Referer.
 
-Suchanfragen werden direkt vom Browser an die eingebundenen externen Dienste gesendet. Die HTML-Datei enthält keine eigene Benutzerverwaltung und keinen eigenen Backend-Datenspeicher.
+Für gelegentliche Einzelnutzung ist das in der Praxis meist unproblematisch, **für intensive oder öffentliche Nutzung ist es nicht regelkonform**. Dann eigene Nominatim-Instanz oder einen kommerziellen Anbieter einsetzen und die Adressen im Quelltext (`nominatim.openstreetmap.org`) ersetzen.
 
-Beim Betrieb sind die Nutzungsbedingungen und Richtlinien der Dienste zu beachten, insbesondere für GBIF, OpenStreetMap-Kartenkacheln und Nominatim. Reverse-Geocoding-Anfragen werden im Code zeitlich serialisiert, um die Nominatim-Dienstvorgabe von ungefähr einer Anfrage pro Sekunde zu berücksichtigen.
+### 9.5 Schriftarten und CDN-Einbindung (Datenschutz)
 
-## Mögliche Weiterentwicklung
+Die Seite lädt Leaflet und Plugin von **unpkg.com**, Tailwind von **cdn.tailwindcss.com** und die Schrift von **Google Fonts**. Dabei wird die **IP-Adresse an diese Anbieter übermittelt**. Deutsche Gerichte haben die dynamische Einbindung von Google Fonts ohne Einwilligung teils als Datenschutzverstoß gewertet (z. B. LG München I, Urteil vom 20.01.2022, Az. 3 O 17493/20). Für private, lokale Nutzung ist das praktisch unkritisch; **für eine öffentliche Webseite sollten alle Ressourcen lokal gehostet werden** (Inter ist unter der SIL OFL 1.1 frei verwendbar).
 
-Folgende Punkte wären mögliche Erweiterungen und sind **nicht** als bereits implementiert zu verstehen:
+### 9.6 Personenbezogene Daten
 
-- Aufteilung in getrennte HTML-, CSS- und JavaScript-Dateien,
-- Konfigurationsdatei für API-Endpunkte und Abrufgrenzen,
-- Pagination oder serverseitige Verarbeitung für mehr als 1.000 Funde,
-- automatisierte Tests für Taxon-Auflösung, Polygonprüfung und Daten-Normalisierung,
-- robustere Fehler- und Rate-Limit-Behandlung,
-- reproduzierbare Exporte mit Suchparametern und Abrufdatum,
-- optionale Speicherung von Suchprofilen,
-- barriereärmere Tastaturbedienung und zusätzliche UI-Tests.
+- **Beobachternamen** und ähnliche Angaben in Fundmeldungen (z. B. aus `/verbatim` oder der iNaturalist-API) sind **personenbezogene Daten** im Sinne der DSGVO. Sie werden im Browser angezeigt und können in den CSV-Export gelangen.
+- Für **private oder wissenschaftliche Einzelnutzung** ist das üblicherweise unproblematisch. Wer solche Daten **veröffentlicht, weitergibt oder dauerhaft speichert**, braucht eine Rechtsgrundlage (Art. 6 DSGVO), muss Informationspflichten erfüllen und Betroffenenrechte beachten.
+- Der **Standort-Button** fragt die Freigabe im Browser ab; der Standort wird nicht gespeichert, fließt aber als Suchgebiet in die Anfrage an GBIF und Nominatim.
+- Die Anwendung selbst speichert **keine Nutzerdaten** außer dem lokalen Proxy-Eintrag (`localStorage`). Gespeicherte Flächen liegen nur in der von dir heruntergeladenen Datei.
+- Bildrechte: Fotos von Funden (Medien) haben eigene Lizenzen (häufig CC BY-NC). Vor jeder Weitergabe oder Veröffentlichung von Bildern die Medienlizenz und die Urheberangabe prüfen; der Filter „nur mit Foto“ sagt nichts über die Lizenz aus.
 
-## Lizenz- und Quellenhinweise
+### 9.7 iNaturalist und Nachweis-Seiten
 
-Die Anwendung verwendet externe Bibliotheken und Datenquellen. Bitte beachte deren jeweilige Lizenz-, Zitier- und Nutzungsbedingungen:
+- **iNaturalist-API:** Nutzung nach den iNaturalist-Nutzungsbedingungen; die API ist für die Anwendungsentwicklung, nicht für massenhaftes Abgreifen gedacht. Jede Beobachtung und jedes Foto behält die Lizenz der Urheberin bzw. des Urhebers (CC0, CC BY, CC BY-NC oder alle Rechte vorbehalten); Namensnennung beachten.
+- **Automatisierter Abruf fremder Webseiten (Proxy)**, insbesondere von naturgucker/enjoynature.net: Er kann gegen die **Nutzungsbedingungen** der Seiten und gegebenenfalls gegen **Datenbankschutzrechte** (§§ 87a ff. UrhG) oder `robots.txt`-Vorgaben verstoßen. Vor Aktivierung des Proxys die Bedingungen der jeweiligen Seite prüfen und nur Einzelabrufe im Rahmen persönlicher Nutzung durchführen. Standardmäßig ist der Proxy **aus**.
 
-- [GBIF](https://www.gbif.org/)
-- [GBIF API-Dokumentation](https://techdocs.gbif.org/en/openapi/)
-- [OpenStreetMap](https://www.openstreetmap.org/copyright)
-- [Nominatim Usage Policy](https://operations.osmfoundation.org/policies/nominatim/)
-- [Leaflet](https://leafletjs.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
+### 9.8 Haftung und Gewährleistung
 
-Die konkrete Lizenz des Projekts selbst ist aus der vorliegenden HTML-Datei nicht ersichtlich und sollte vom Projektverantwortlichen ergänzt werden.
+Das Programm wird **ohne Gewähr** bereitgestellt, soweit gesetzlich zulässig (keine Zusicherung der Richtigkeit, Vollständigkeit oder Eignung). Fundmeldungen sind nicht für naturschutzrechtliche Gutachten, Eingriffsplanungen oder Artenschutzprüfungen geeignet, ohne sie fachlich zu prüfen. Sensible Fundorte geschützter Arten nicht veröffentlichen.
+
+### 9.9 Checkliste vor Weitergabe oder Veröffentlichung
+
+- [ ] Lizenz für den eigenen Code festgelegt und `LICENSE` beigelegt
+- [ ] Bibliotheken lokal gehostet (kein unpkg/Tailwind-CDN/Google Fonts) oder Datenschutzhinweis vorhanden
+- [ ] Kachelquellen geprüft (OSM-Policy, Esri-Bedingungen) bzw. eigener Kachelserver
+- [ ] Nominatim: eigene Instanz oder Drosselung/Cache ergänzt
+- [ ] Exportierte Funde mit Lizenz-, Rechteinhaber- und Datensatzangabe weitergegeben; CC BY-NC beachtet
+- [ ] GBIF-Download mit DOI für Publikationen erzeugt und zitiert
+- [ ] Keine personenbezogenen Daten ohne Rechtsgrundlage veröffentlicht
+- [ ] Impressum/Datenschutzerklärung bei öffentlicher Bereitstellung
+
+---
+
+## 10. Bekannte Einschränkungen
+
+- Die Erweiterungen (Flächen speichern/laden, Verwaltungsgrenzen, Filter, Raster, Cluster, Hintergrundkarten, Link, Exporte) wurden **nicht in einem echten Browser getestet**; nur die Syntax des JavaScripts wurde geprüft. Fehler sind möglich.
+- Höchstens 1.000 Funde je Suche; GBIF-Suche mit Polygon nur mit gültigen, nicht selbstüberschneidenden Flächen.
+- Verwaltungsgrenze: vereinfacht, erster passender Nominatim-Treffer, nur größter Teil bei Mehrteilgebieten als Fläche, keine Löcher.
+- MTB/Q/MF sind berechnet und nur im deutschen TK25-Rasterbereich definiert.
+- Nicht enthalten: mehrere Arten gleichzeitig, Artenliste des Gebiets, Heatmap, Markerfarben nach Merkmal, Dark Mode, mobile Tab-Ansicht, Abbruch laufender Nominatim-Abfragen.
+- `proxy_server.py` liegt nicht bei.
+
+---
+
+## 11. Änderungsübersicht
+
+| Erweiterung | Kurzbeschreibung |
+|---|---|
+| Flächen speichern/laden | GeoJSON-Datei, Drag & Drop |
+| Verwaltungsgrenze | Anzeige, Übernahme als gezeichnete Fläche oder als exakte Suchfläche |
+| Filter | Jahr, Jahreszeit, Aufnahmeart, Foto, Genauigkeit (serverseitig) |
+| MTB/Q/MF-Raster | dünne Linien und Beschriftung |
+| Karte | Marker-Clustering, drei Hintergrundkarten |
+| Teilen/Export | Link mit Suchstatus, GeoJSON, GBIF-Portal-Sprung, Standort |
+| Stabilität | Abbruch veralteter Suchläufe |
+| Quellenangaben | Attribution für OpenTopoMap und Esri ergänzt, OSM-Hinweis „-Mitwirkende“ |
