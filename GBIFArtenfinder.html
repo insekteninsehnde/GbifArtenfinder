@@ -33,6 +33,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <style>
         /* Benutzerdefinierte Scrollbars und Karten-Anpassungen */
         body {
@@ -190,6 +193,12 @@
                     <div class="text-[11px] text-slate-500 mt-0.5 truncate">
                         Tipp: Klick auf Karte setzt Kästchen neu
                     </div>
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-slate-600">
+                    <label class="inline-flex items-center gap-1" title="Zeigt die politische Grenze des gesuchten Ortes bzw. der Region (OpenStreetMap/Nominatim)"><input id="boundary-toggle" type="checkbox" class="accent-emerald-600"> Verwaltungsgrenze anzeigen</label>
+                    <button type="button" id="boundary-use-btn" disabled class="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-300 rounded-lg font-semibold">Als Suchfläche (exakte Grenze)</button>
+                    <button type="button" id="boundary-draw-btn" disabled title="Übernimmt die Grenze als normal gezeichnete Fläche mit verschiebbaren Ecken" class="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-300 rounded-lg font-semibold">Als gezeichnete Fläche</button>
+                    <span id="boundary-info" class="text-slate-400 truncate"></span>
+                </div>
                 </div>
 
                 <!-- 3. Kästchen-Größe / Radius -->
@@ -236,6 +245,19 @@
 
             </div>
         </div>
+        <div class="max-w-[1920px] mx-auto px-4 pb-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-600">
+            <span class="font-semibold">Filter:</span>
+            <label class="inline-flex items-center gap-1">Jahr <input id="f-year1" type="number" min="1700" max="2100" placeholder="von" class="w-16 px-1.5 py-1 border border-slate-300 rounded-lg"> – <input id="f-year2" type="number" min="1700" max="2100" placeholder="bis" class="w-16 px-1.5 py-1 border border-slate-300 rounded-lg"></label>
+            <label class="inline-flex items-center gap-1">Monate <select id="f-season" class="px-1.5 py-1 border border-slate-300 rounded-lg"><option value="">alle</option><option value="3,4,5">Frühling</option><option value="6,7,8">Sommer</option><option value="9,10,11">Herbst</option><option value="12,1,2">Winter</option></select></label>
+            <label class="inline-flex items-center gap-1">Aufnahmeart <select id="f-basis" class="px-1.5 py-1 border border-slate-300 rounded-lg"><option value="">alle</option><option value="HUMAN_OBSERVATION">Beobachtung</option><option value="MACHINE_OBSERVATION">Maschinell</option><option value="PRESERVED_SPECIMEN">Präparat/Beleg</option><option value="MATERIAL_CITATION">Literatur</option></select></label>
+            <label class="inline-flex items-center gap-1"><input id="f-photo" type="checkbox" class="accent-emerald-600"> nur mit Foto</label>
+            <label class="inline-flex items-center gap-1" title="Koordinatenunsicherheit höchstens"><input id="f-unc" type="checkbox" class="accent-emerald-600"> Genauigkeit ≤ 1 km</label>
+            <label class="inline-flex items-center gap-1" title="TK25-Raster: MTB (6'×10'), Quadrant (3'×5'), Minutenfeld (1'×1')"><input id="mtb-grid-toggle" type="checkbox" class="accent-emerald-600"> MTB/Q/MF-Raster</label>
+            <button type="button" id="geoloc-btn" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-semibold">📍 Mein Standort</button>
+            <button type="button" id="share-btn" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-semibold">🔗 Link kopieren</button>
+            <button type="button" id="gbif-portal-btn" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-semibold">↗ GBIF-Portal</button>
+            <button type="button" id="geojson-btn" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-semibold">GeoJSON-Export</button>
+        </div>
     </header>
 
     <!-- Hauptbereich: Split-Screen (Karte links, Ergebnisliste rechts) -->
@@ -254,6 +276,9 @@
                     <button type="button" id="poly-undo-btn" class="px-2 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition">↶ Punkt zurück</button>
                     <button type="button" id="poly-clear-btn" class="px-2 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition">✕ Neu</button>
                 </span>
+                <button type="button" id="poly-save-btn" title="Fläche als JSON-Datei speichern" class="px-2 py-1 rounded-lg font-semibold bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 transition">💾 Fläche speichern</button>
+                <button type="button" id="poly-load-btn" title="Gespeicherte Fläche (GeoJSON/JSON) laden oder auf die Karte ziehen" class="px-2 py-1 rounded-lg font-semibold bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 transition">📂 Fläche laden</button>
+                <input type="file" id="poly-file" accept=".json,.geojson,application/json" class="hidden">
                 <span id="poly-hint" class="hidden basis-full text-[11px] text-slate-500 leading-snug"></span>
             </div>
 
@@ -475,14 +500,19 @@
             zoomControl: true
         });
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | Daten: <a href="https://www.gbif.org">GBIF.org</a>'
         }).addTo(map);
 
+        L.control.layers({
+            'OpenStreetMap': osmLayer,
+            'Topografie': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: '© OpenTopoMap' }),
+            'Satellit': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: '© Esri' })
+        }, null, { position: 'topright' }).addTo(map);
         // Layer-Gruppen für Suchkästchen und Fund-Marker
         const bboxLayerGroup = L.layerGroup().addTo(map);
-        const markersLayerGroup = L.layerGroup().addTo(map);
+        const markersLayerGroup = L.markerClusterGroup({ maxClusterRadius: 40, showCoverageOnHover: false }).addTo(map);
 
         let searchRectangle = null;
         let handleNW = null;
@@ -763,6 +793,7 @@
                     if (polyShape) polyShape.setLatLngs(pts);
                 });
                 m.on('dragend', () => {
+                    state.exactBoundary = null;
                     redrawPolygon();
                     updatePolyInfoUI();
                     if (pg.closed) searchPolygon();
@@ -784,6 +815,7 @@
                     }).addTo(polyLayerGroup);
                     mm.on('click', () => {
                         pts.splice(i + 1, 0, mid);
+                        state.exactBoundary = null;
                         redrawPolygon();
                         updatePolyInfoUI();
                     });
@@ -795,6 +827,7 @@
             const pg = state.polygon;
             if (pg.closed && pg.pts.length <= 3) { showToast('Eine Fläche braucht mindestens 3 Ecken.', 'warning'); return; }
             pg.pts.splice(i, 1);
+            state.exactBoundary = null;
             redrawPolygon();
             updatePolyInfoUI();
             if (pg.closed) searchPolygon();
@@ -821,6 +854,7 @@
         }
 
         function resetPolygon() {
+            state.exactBoundary = null;
             state.polygon = { pts: [], closed: false };
             redrawPolygon();
             updatePolyInfoUI();
@@ -1118,7 +1152,9 @@
         });
 
         // --- GBIF Occurrence API Abfrage ---
+        let runId = 0;
         async function fetchGbifOccurrences() {
+            const myRun = ++runId;
             if (state.mode === 'poly' && !(state.polygon.closed && state.polygon.pts.length >= 3)) {
                 showToast('Bitte zuerst die Fläche zeichnen und schließen.', 'warning');
                 return;
@@ -1191,18 +1227,21 @@
                         params.append('scientificName', rawInput);
                     }
 
+                    applyServerFilters(params);
                     const response = await fetch(`https://api.gbif.org/v1/occurrence/search?${params.toString()}`);
                     if (!response.ok) {
                         throw new Error(`GBIF API Status ${response.status}`);
                     }
 
                     const data = await response.json();
+                    if (myRun !== runId) return;
                     totalAvailable = data.count || 0;
                     const batch = data.results || [];
 
                     for (const rec of batch) {
                         if (state.mode === 'poly' && typeof rec.decimalLatitude === 'number' && typeof rec.decimalLongitude === 'number'
-                            && !pointInPolygon(rec.decimalLatitude, rec.decimalLongitude, state.polygon.pts)) continue;
+                            && (!pointInPolygon(rec.decimalLatitude, rec.decimalLongitude, state.polygon.pts)
+                            || (state.exactBoundary && !state.exactBoundary.some(r => pointInPolygon(rec.decimalLatitude, rec.decimalLongitude, r))))) continue;
                         state.allOccurrences.push(normalizeOccurrence(rec, resolvedVernacular));
                     }
 
@@ -2237,6 +2276,223 @@
         searchGbifBtn.addEventListener('click', fetchGbifOccurrences);
 
         // --- Initialisierung beim Laden der Seite ---
+        function applyServerFilters(params) {
+            const y1 = document.getElementById('f-year1').value, y2 = document.getElementById('f-year2').value;
+            if (y1 || y2) params.append('year', `${y1 || 1700},${y2 || new Date().getFullYear()}`);
+            const se = document.getElementById('f-season').value;
+            if (se) se.split(',').forEach(m => params.append('month', m));
+            const b = document.getElementById('f-basis').value; if (b) params.append('basisOfRecord', b);
+            if (document.getElementById('f-photo').checked) params.append('mediaType', 'StillImage');
+            if (document.getElementById('f-unc').checked) params.append('coordinateUncertaintyInMeters', '0,1000');
+        }
+        ['f-year1','f-year2','f-season','f-basis','f-photo','f-unc'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+            if (state.mode === 'poly' ? state.polygon.closed : true) fetchGbifOccurrences();
+        }));
+
+        // --- Flächen als lokale JSON-Datei speichern / laden ---
+        function download(name, text, type = 'application/json') {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([text], { type }));
+            a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        }
+        document.getElementById('poly-save-btn').addEventListener('click', () => {
+            const pts = state.polygon.pts;
+            if (!state.polygon.closed || pts.length < 3) { showToast('Bitte zuerst eine Fläche zeichnen und schließen.', 'warning'); return; }
+            const name = (prompt('Name der Fläche:', 'Suchfläche') || '').trim();
+            if (!name) return;
+            const ring = pts.map(q => [+q.lng.toFixed(6), +q.lat.toFixed(6)]); ring.push(ring[0]);
+            const gj = { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { name, saved: new Date().toISOString() }, geometry: { type: 'Polygon', coordinates: [ring] } }] };
+            download(name.replace(/[^\w\-äöüÄÖÜß]+/g, '_') + '.geojson.json', JSON.stringify(gj, null, 2));
+            showToast('Fläche gespeichert.', 'success');
+        });
+        function loadPolygonFromJson(text, exact) {
+            try {
+                const j = JSON.parse(text);
+                const feats = j.type === 'FeatureCollection' ? j.features : [j.type === 'Feature' ? j : { geometry: j }];
+                const g = (feats.find(f => f.geometry && /Polygon/.test(f.geometry.type)) || {}).geometry;
+                if (!g) throw new Error('kein Polygon');
+                const ring = g.type === 'MultiPolygon' ? g.coordinates[0][0] : g.coordinates[0];
+                let pts = ring.map(c => [c[1], c[0]]);
+                if (pts.length > 3 && pts[0][0] === pts[pts.length-1][0] && pts[0][1] === pts[pts.length-1][1]) pts.pop();
+                if (pts.length < 3) throw new Error('zu wenige Punkte');
+                pts = pts.map(c => L.latLng(c[0], c[1]));
+                setMode('poly');
+                state.polygon = { pts, closed: true };
+                state.exactBoundary = exact || null;
+                redrawPolygon(); updatePolyInfoUI();
+                map.fitBounds(L.latLngBounds(pts), { padding: [40, 40] });
+                searchPolygon();
+                showToast('Fläche geladen.', 'success');
+            } catch (e) { showToast('Datei enthält keine gültige Fläche (GeoJSON-Polygon erwartet).', 'error'); }
+        }
+        const polyFile = document.getElementById('poly-file');
+        document.getElementById('poly-load-btn').addEventListener('click', () => polyFile.click());
+        polyFile.addEventListener('change', () => { const f = polyFile.files[0]; if (f) f.text().then(loadPolygonFromJson); polyFile.value = ''; });
+        map.getContainer().addEventListener('dragover', e => e.preventDefault());
+        map.getContainer().addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) f.text().then(loadPolygonFromJson); });
+
+        // --- GeoJSON-Export der Funde ---
+        document.getElementById('geojson-btn').addEventListener('click', () => {
+            const list = state.allOccurrences.filter(i => i.lat !== null);
+            if (!list.length) { showToast('Keine Funde zum Exportieren.', 'warning'); return; }
+            const feats = list.map(i => {
+                const props = {}; Object.entries(i).forEach(([k, v]) => { if (v === null || ['string','number','boolean'].includes(typeof v)) props[k] = v; });
+                return { type: 'Feature', properties: props, geometry: { type: 'Point', coordinates: [i.lon, i.lat] } };
+            });
+            download('gbif_funde.geojson', JSON.stringify({ type: 'FeatureCollection', features: feats }));
+        });
+
+        // --- Standort, teilbarer Link, GBIF-Portal ---
+        document.getElementById('geoloc-btn').addEventListener('click', () => {
+            if (!navigator.geolocation) { showToast('Standortbestimmung nicht verfügbar.', 'error'); return; }
+            navigator.geolocation.getCurrentPosition(pos => {
+                if (state.mode !== 'rect') setMode('rect');
+                map.setView([pos.coords.latitude, pos.coords.longitude], 13);
+                renderInteractiveBoundingBox(calculateBoundsFromCenter(pos.coords.latitude, pos.coords.longitude, state.radiusKm), true);
+            }, () => showToast('Standort konnte nicht ermittelt werden.', 'error'), { timeout: 10000 });
+        });
+        function buildShareHash() {
+            const h = new URLSearchParams();
+            h.set('s', speciesInput.value.trim());
+            if (state.mode === 'poly' && state.polygon.closed) h.set('poly', state.polygon.pts.map(q => q.lat.toFixed(5) + ',' + q.lng.toFixed(5)).join(';'));
+            else if (state.bounds) h.set('b', [state.bounds.getSouth(), state.bounds.getWest(), state.bounds.getNorth(), state.bounds.getEast()].map(v => v.toFixed(5)).join(','));
+            [['y1','f-year1'],['y2','f-year2'],['se','f-season'],['ba','f-basis']].forEach(([k, id]) => { const v = document.getElementById(id).value; if (v) h.set(k, v); });
+            if (document.getElementById('f-photo').checked) h.set('ph', '1');
+            if (document.getElementById('f-unc').checked) h.set('un', '1');
+            return h.toString();
+        }
+        document.getElementById('share-btn').addEventListener('click', () => {
+            const url = location.href.split('#')[0] + '#' + buildShareHash();
+            history.replaceState(null, '', '#' + buildShareHash());
+            copyToClipboard(url, 'Link');
+        });
+        document.getElementById('gbif-portal-btn').addEventListener('click', () => {
+            const q = new URLSearchParams();
+            if (state.selectedTaxon.taxonKey) q.set('taxon_key', state.selectedTaxon.taxonKey);
+            if (state.mode === 'poly' && state.polygon.closed) q.set('geometry', polygonWkt(state.polygon.pts));
+            else if (state.bounds) q.set('geometry', `POLYGON((${state.bounds.getWest()} ${state.bounds.getSouth()},${state.bounds.getEast()} ${state.bounds.getSouth()},${state.bounds.getEast()} ${state.bounds.getNorth()},${state.bounds.getWest()} ${state.bounds.getNorth()},${state.bounds.getWest()} ${state.bounds.getSouth()}))`);
+            window.open('https://www.gbif.org/occurrence/search?' + q.toString(), '_blank', 'noopener');
+        });
+        function applyHash() {
+            const h = new URLSearchParams(location.hash.slice(1));
+            if (![...h.keys()].length) return;
+            if (h.get('s')) { speciesInput.value = h.get('s'); state.selectedTaxon.taxonKey = null; clearSpeciesBtn.classList.remove('hidden'); }
+            [['y1','f-year1'],['y2','f-year2'],['se','f-season'],['ba','f-basis']].forEach(([k, id]) => { if (h.has(k)) document.getElementById(id).value = h.get(k); });
+            document.getElementById('f-photo').checked = h.has('ph');
+            document.getElementById('f-unc').checked = h.has('un');
+            if (h.get('poly')) {
+                const pts = h.get('poly').split(';').map(t => t.split(',').map(Number));
+                loadPolygonFromJson(JSON.stringify({ type: 'Polygon', coordinates: [pts.map(q => [q[1], q[0]])] }));
+            } else if (h.get('b')) {
+                const [a, b, c, d] = h.get('b').split(',').map(Number);
+                const bb = L.latLngBounds([a, b], [c, d]);
+                map.fitBounds(bb); renderInteractiveBoundingBox(bb, true);
+            }
+        }
+        window.addEventListener('load', () => setTimeout(applyHash, 50));
+        // --- Politische Grenze (Stadt/Region) als optionale Fläche ---
+        let boundaryLayer = null, boundaryRings = null, boundaryRun = 0;
+        const boundaryToggle = document.getElementById('boundary-toggle');
+        const boundaryUseBtn = document.getElementById('boundary-use-btn');
+        const boundaryInfo = document.getElementById('boundary-info');
+        function clearBoundary() {
+            if (boundaryLayer) { map.removeLayer(boundaryLayer); boundaryLayer = null; }
+            boundaryRings = null; boundaryUseBtn.disabled = true; document.getElementById('boundary-draw-btn').disabled = true; boundaryInfo.textContent = '';
+        }
+        async function showBoundary() {
+            const q = locationInput.value.trim();
+            const run = ++boundaryRun;
+            clearBoundary();
+            if (!boundaryToggle.checked || !q) return;
+            boundaryInfo.textContent = 'Lade Grenze …';
+            try {
+                const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&polygon_geojson=1&polygon_threshold=0.0003&accept-language=de&q=${encodeURIComponent(q)}`;
+                const r = await fetch(url);
+                if (!r.ok) throw new Error(r.status);
+                const list = await r.json();
+                if (run !== boundaryRun) return;
+                const hit = list.find(x => x.geojson && /Polygon/.test(x.geojson.type));
+                if (!hit) { boundaryInfo.textContent = 'Keine Grenze gefunden (evtl. nur ein Punkt).'; return; }
+                boundaryLayer = L.geoJSON(hit.geojson, { interactive: false, style: { color: '#7c3aed', weight: 3, dashArray: '8 5', fillColor: '#7c3aed', fillOpacity: 0.06 } }).addTo(map);
+                const polys = hit.geojson.type === 'MultiPolygon' ? hit.geojson.coordinates : [hit.geojson.coordinates];
+                boundaryRings = polys.map(pl => pl[0]).sort((a, b) => b.length - a.length);
+                map.fitBounds(boundaryLayer.getBounds(), { padding: [30, 30] });
+                boundaryUseBtn.disabled = false; document.getElementById('boundary-draw-btn').disabled = false;
+                boundaryInfo.textContent = (hit.display_name || '').split(',').slice(0, 2).join(',') + ' · © OSM';
+            } catch (e) { if (run === boundaryRun) boundaryInfo.textContent = 'Grenze konnte nicht geladen werden.'; }
+        }
+        function simplifyRing(pts, tol) { // Douglas-Peucker auf [lon,lat]
+            const d2 = (p, a, b) => { let x = a[0], y = a[1], dx = b[0] - x, dy = b[1] - y;
+                if (dx || dy) { const t = Math.max(0, Math.min(1, ((p[0] - x) * dx + (p[1] - y) * dy) / (dx * dx + dy * dy))); x += t * dx; y += t * dy; }
+                return (p[0] - x) ** 2 + (p[1] - y) ** 2; };
+            const keep = new Array(pts.length).fill(false); keep[0] = keep[pts.length - 1] = true;
+            const stack = [[0, pts.length - 1]];
+            while (stack.length) { const [i, j] = stack.pop(); let mx = 0, k = -1;
+                for (let n = i + 1; n < j; n++) { const d = d2(pts[n], pts[i], pts[j]); if (d > mx) { mx = d; k = n; } }
+                if (k > -1 && mx > tol * tol) { keep[k] = true; stack.push([i, k], [k, j]); } }
+            return pts.filter((_, n) => keep[n]);
+        }
+        boundaryUseBtn.addEventListener('click', () => {
+            if (!boundaryRings) return;
+            let ring = boundaryRings[0], tol = 0.0002;
+            while (ring.length > 150 && tol < 0.5) { ring = simplifyRing(boundaryRings[0], tol); tol *= 1.6; }
+            const exact = boundaryRings.map(r => r.map(c => L.latLng(c[1], c[0]))); // alle Teilflächen, volle Auflösung [lat,lon]
+            loadPolygonFromJson(JSON.stringify({ type: 'Polygon', coordinates: [ring] }), exact);
+            showToast('Es werden nur Nachweise innerhalb der exakten Verwaltungsgrenze angezeigt.', 'info');
+            if (boundaryRings.length > 1) showToast('Gebiet besteht aus mehreren Teilen – es wird nur der größte Teil als Suchfläche verwendet.', 'info');
+        });
+        document.getElementById('boundary-draw-btn').addEventListener('click', () => {
+            if (!boundaryRings) return;
+            let ring = boundaryRings[0], tol = 0.0005;
+            while (ring.length > 60 && tol < 0.5) { ring = simplifyRing(boundaryRings[0], tol); tol *= 1.5; }
+            loadPolygonFromJson(JSON.stringify({ type: 'Polygon', coordinates: [ring] }), null);
+            showToast(`Grenze als gezeichnete Fläche übernommen (${ring.length - 1} Ecken) – Ecken lassen sich verschieben, per Rechtsklick löschen oder per Kantenpunkt ergänzen.`, 'success');
+            if (boundaryRings.length > 1) showToast('Nur der größte Teil des Gebiets wurde übernommen.', 'info');
+        });
+        boundaryToggle.addEventListener('change', showBoundary);
+
+        // --- MTB/Q/MF-Gitter als dünne Linien ---
+        const gridStyle = document.createElement('style');
+        gridStyle.textContent = '.mtb-lbl{background:none;border:0;font:600 11px Inter,sans-serif;white-space:nowrap;text-align:center;pointer-events:none;text-shadow:0 0 3px #fff,0 0 3px #fff}';
+        document.head.appendChild(gridStyle);
+        const gridLayer = L.layerGroup();
+        const gridToggle = document.getElementById('mtb-grid-toggle');
+        const G0_LAT = 55 + 54 / 60, G0_LON = 5 + 50 / 60;
+        const GRID_LEVELS = [ // von fein nach grob zeichnen
+            { key: 'mf',  dLat: 1/60, dLon: 1/60, minZoom: 13, color: '#64748b', weight: 0.5, opacity: 0.6, dash: null,  lblZoom: 15 },
+            { key: 'q',   dLat: 0.05, dLon: 1/12, minZoom: 11, color: '#0f766e', weight: 0.8, opacity: 0.8, dash: '5 4', lblZoom: 12 },
+            { key: 'mtb', dLat: 0.1,  dLon: 1/6,  minZoom: 8,  color: '#1e3a8a', weight: 1.1, opacity: 0.9, dash: null,  lblZoom: 9 }
+        ];
+        function redrawGrid() {
+            gridLayer.clearLayers();
+            if (!gridToggle.checked) return;
+            const z = map.getZoom(), b = map.getBounds().pad(0.05);
+            GRID_LEVELS.forEach(L_ => {
+                if (z < L_.minZoom) return;
+                const rA = Math.ceil((G0_LAT - b.getNorth()) / L_.dLat), rB = Math.floor((G0_LAT - b.getSouth()) / L_.dLat);
+                const cA = Math.ceil((b.getWest() - G0_LON) / L_.dLon), cB = Math.floor((b.getEast() - G0_LON) / L_.dLon);
+                if (rB - rA > 150 || cB - cA > 150) return;
+                const st = { color: L_.color, weight: L_.weight, opacity: L_.opacity, dashArray: L_.dash, interactive: false, lineCap: 'butt' };
+                for (let r = rA; r <= rB; r++) { const lat = G0_LAT - r * L_.dLat; L.polyline([[lat, b.getWest()], [lat, b.getEast()]], st).addTo(gridLayer); }
+                for (let c = cA; c <= cB; c++) { const lon = G0_LON + c * L_.dLon; L.polyline([[b.getSouth(), lon], [b.getNorth(), lon]], st).addTo(gridLayer); }
+                if (z >= L_.lblZoom && (rB - rA + 1) * (cB - cA + 1) <= 250) {
+                    for (let r = rA - 1; r <= rB; r++) for (let c = cA - 1; c <= cB; c++) {
+                        const la = G0_LAT - (r + 0.5) * L_.dLat, lo = G0_LON + (c + 0.5) * L_.dLon;
+                        if (!b.contains([la, lo])) continue;
+                        const m = calcMtb(la, lo); if (!m) continue;
+                        const txt = L_.key === 'mtb' ? m.sheet : L_.key === 'q' ? String(m.quadrant) : String(m.mf);
+                        L.marker([la, lo], { interactive: false, icon: L.divIcon({ className: 'mtb-lbl', html: `<span style="color:${L_.color};opacity:${L_.key === 'mf' ? 0.8 : 1};font-size:${L_.key === 'mtb' ? 13 : 11}px">${txt}</span>`, iconSize: [40, 14], iconAnchor: [20, 7] }) }).addTo(gridLayer);
+                    }
+                }
+            });
+        }
+        gridToggle.addEventListener('change', () => { if (gridToggle.checked) { gridLayer.addTo(map); redrawGrid(); } else { map.removeLayer(gridLayer); } });
+        map.on('moveend zoomend', () => { if (gridToggle.checked) redrawGrid(); });
+        document.getElementById('location-search-btn').addEventListener('click', () => { if (boundaryToggle.checked) showBoundary(); });
+        locationInput.addEventListener('keydown', e => { if (e.key === 'Enter' && boundaryToggle.checked) showBoundary(); });
+
+        
+
         window.addEventListener('load', () => {
             clearSpeciesBtn.classList.remove('hidden');
             const initialBounds = calculateBoundsFromCenter(state.centerLat, state.centerLon, state.radiusKm);
