@@ -4,7 +4,7 @@ Interaktive Karten-Oberfläche zur Suche von Artnachweisen (Biodiversitätsdaten
 
 > **Wichtiger Hinweis zu diesem Dokument:** Die Abschnitte zu Lizenzen, Datenschutz und Nutzungsbedingungen (Kapitel 9) wurden nach bestem Wissen und anhand der zum Zeitpunkt der Erstellung (16.11.2026) öffentlich einsehbaren Bedingungen der Anbieter erstellt. Sie sind **keine Rechtsberatung** und können nicht garantieren, dass jede Nutzung rechtlich einwandfrei ist. Bedingungen ändern sich; maßgeblich sind immer die Originaltexte der Anbieter (Links in Kapitel 9). Bei Veröffentlichung, kommerzieller Nutzung oder Weitergabe personenbezogener Daten sollte eine fachkundige Rechtsprüfung erfolgen.
 
-> **Zu den Abbildungen:** Die Bilder in diesem Dokument sind **Schemazeichnungen** (SVG), keine Bildschirmfotos. Sie zeigen Aufbau und Abläufe, nicht das exakte Aussehen. Eigene Screenshots können unter `docs/img/` ergänzt werden.
+> **Zu den Abbildungen:** Die PNG-Bilder sind **Bildschirmaufnahmen der echten Oberfläche** (`GBIFArtenfinder.html`, gerendert in einem Headless-Browser). Weil dabei kein Internet zur Verfügung stand, enthalten sie **keine echten Kartenkacheln und keine echten GBIF-Daten**: Die Kartenfläche ist eine vereinfachte Platzhalter-Karte, die Fundpunkte, Listeneinträge, Beobachternamen („Beispiel-Beobachter“) und Datensätze („Beispiel-Datensatz“) sind **frei erfundene Beispieldaten**, und die Verwaltungsgrenze ist ein erfundener Beispielumriss. Bedienelemente, Texte, Farben, Liste und Phänologie-Grafik stammen aus dem Programm selbst; Raster-Beschriftungen sind mit der Programmfunktion für MTB/Quadrant/Minutenfeld berechnet. Die SVG-Bilder sind Schemazeichnungen. Eigene Screenshots mit echten Karten können unter `docs/img/` ergänzt werden.
 
 ---
 
@@ -36,7 +36,9 @@ Interaktive Karten-Oberfläche zur Suche von Artnachweisen (Biodiversitätsdaten
 - Ergebnisliste mit Textfilter, Sortierung, MTB-Quadrant je Fund, optionalem Nachladen von Details, **Phänologie-Grafik** (Funde pro Kalenderwoche).
 - Export: **CSV** und **GeoJSON**; **Link** zum Teilen der Suche; Sprung ins **GBIF-Portal** mit gleicher Suche.
 
-![Schema der Oberfläche](readme-assets/01-oberflaeche.svg)
+![Gesamtansicht der Oberfläche mit Beispieldaten](docs/img/01-uebersicht.png)
+
+*Abb. 1: Gesamtansicht – links Karte mit Suchkästchen und Clustern, rechts Ergebnisliste (Beispieldaten, Platzhalter-Karte).*
 
 ---
 
@@ -48,6 +50,8 @@ Interaktive Karten-Oberfläche zur Suche von Artnachweisen (Biodiversitätsdaten
 | Internet | **erforderlich** (GBIF, Kartenkacheln, Nominatim, CDN-Bibliotheken) |
 | Installation | keine; Datei `GBIFArtenfinder.html` per Doppelklick öffnen |
 | Optional | Python 3 für den lokalen Proxy (Kapitel 8) |
+
+**Karte bleibt leer oder zeigt „Access blocked“-Kacheln?** Das passiert, wenn die Datei per Doppelklick (`file://`) geöffnet wird: Die OSM-Kachelserver verlangen einen Referer, den lokale Dateien nicht senden. Deshalb ist die **Esri-Straßenkarte** die Standardkarte. Wählst du OpenStreetMap in der Ebenenwahl und der Server sperrt die Seite, wird das erkannt und zurück auf Esri gewechselt. Die CARTO-Karte verlangt seit 2026 einen kostenlosen API-Key und ist nur mit eigenem Key (Button „🔑 CARTO-Key“, Speicherung im `localStorage`) verfügbar. OSM selbst ist über die Ebenenwahl weiter wählbar, funktioniert aber erst, wenn die Datei über einen Webserver ausgeliefert wird (siehe unten). Wird Leaflet gar nicht geladen (Offline, Werbeblocker, Firewall gegen unpkg.com), erscheint statt der Karte eine Fehlermeldung.
 
 **Hinweis zu `file://`:** Wird die Datei direkt von der Festplatte geöffnet, senden Browser keinen Referer. Manche Dienste (insbesondere die OSM-Kachelserver und Nominatim) verlangen laut ihren Richtlinien eine Identifikation der Anwendung. Dadurch können Kacheln oder Ortssuche ausbleiben oder blockiert werden. Abhilfe: Datei über einen eigenen kleinen Webserver ausliefern (z. B. `python -m http.server`) oder eine eigene Kachel-/Geocoding-Quelle eintragen (siehe Kapitel 9.4).
 
@@ -63,6 +67,10 @@ Interaktive Karten-Oberfläche zur Suche von Artnachweisen (Biodiversitätsdaten
 4. **Bei GBIF suchen** – startet die Suche.
 5. **Verwaltungsgrenze** – Checkbox und zwei Übernahme-Buttons (Kapitel 5.4).
 6. **Filterzeile** – Jahr, Monate, Aufnahmeart, Foto, Genauigkeit, MTB/Q/MF-Raster, Standort, Link, GBIF-Portal, GeoJSON.
+
+![Kopfbereich mit Suchfeldern und Filterzeile](docs/img/02-kopf-filter.png)
+
+*Abb. 2: Kopfbereich mit Suchfeldern, Verwaltungsgrenze und Filterzeile.*
 
 **Kartenbereich** mit Modusleiste (`▭ Rechteck`, `⬠ Fläche zeichnen`, `✓ Schließen & suchen`, `↶ Punkt zurück`, `✕ Neu`, `💾 Fläche speichern`, `📂 Fläche laden`) und Ebenenwahl oben rechts (OpenStreetMap, Topografie, Satellit).
 
@@ -84,7 +92,9 @@ Es werden höchstens **1.000 Funde pro Suche** geladen; die Anzeige nennt die Ge
 
 ## 5. Flächen: zeichnen, speichern, laden, Verwaltungsgrenzen
 
-![Ablauf der Flächenfunktionen](readme-assets/02-flaechen.svg)
+![Ablauf der Flächenfunktionen](docs/img/02-flaechen.svg)
+
+*Schema: Zeichnen, Schließen, Speichern, Laden und Verwaltungsgrenze.*
 
 ### 5.1 Fläche zeichnen
 
@@ -115,9 +125,17 @@ Format (GeoJSON nach [RFC 7946](https://www.rfc-editor.org/rfc/rfc7946), Koordin
 }
 ```
 
+![Gezeichnete Fläche und Verwaltungsgrenze](docs/img/03-flaechen.png)
+
+*Abb. 3: Zeichenmodus mit gezeichneter Fläche (grün, Ecken und Kantenpunkte) und angezeigter Verwaltungsgrenze (violett, erfundener Beispielumriss).*
+
 ### 5.4 Verwaltungsgrenze
 
 1. Im Ortsfeld einen Ort oder eine Region eingeben, **Verwaltungsgrenze anzeigen** aktivieren und „Ort finden“ bzw. Enter wählen.
+![Bedienelemente für die Verwaltungsgrenze](docs/img/03b-verwaltungsgrenze.png)
+
+*Abb. 4: Ortsfeld, Checkbox und die beiden Übernahme-Buttons.*
+
 2. Die Grenze erscheint violett gestrichelt (Quelle: OpenStreetMap über Nominatim; es wird der erste Treffer mit Flächengeometrie verwendet, bei mehrdeutigen Namen kann das ein falsches Gebiet sein – Zusatz wie „Sehnde, Niedersachsen“ hilft).
 3. Zwei Übernahmearten:
 
@@ -144,14 +162,20 @@ Grenzen der Genauigkeit: Durch die Vereinfachung kann ein schmaler Randstreifen 
 
 ### 6.2 TK25-Raster (MTB / Quadrant / Minutenfeld)
 
-![Aufbau des TK25-Rasters](readme-assets/03-mtb-raster.svg)
+![TK25-Raster auf der Karte](docs/img/04-mtb-raster.png)
+
+*Abb. 5: MTB-Raster in hoher Zoomstufe: dunkelblaue Linien = MTB (hier Blatt 3625), gestrichelt = Quadrant, dünne graue Linien = Minutenfelder mit Nummern 1–15; zusätzlich Quadrantnummern 1–4.*
+
+![Schema des TK25-Rasters](docs/img/03-mtb-raster.svg)
+
+*Abb. 6: Schema: ein MTB mit 4 Quadranten und je 15 Minutenfeldern.*
 
 Checkbox **MTB/Q/MF-Raster** zeichnet dünne Linien: MTB (6′ × 10′) ab Zoomstufe 8, Quadranten (3′ × 5′) ab 11, Minutenfelder (1′ × 1′) ab 13; Beschriftung ab Zoom 9/12/15. Die Rasterdefinition entspricht der MTB-Angabe in der Fundliste: Ursprung 55°54′ N / 5°50′ E, Blattnummer = Zeile von Nord + Spalte von West, Quadrant 1 = NW, 2 = NO, 3 = SW, 4 = SO, Minutenfeld 1–15 zeilenweise von NW. Zahlen sind **berechnet**, nicht amtlich geprüft; bei Unsicherheit mit der amtlichen TK25 abgleichen. Für Gebiete außerhalb des Rasters (Zeile/Spalte > 99) wird nichts angezeigt.
 
 ### 6.3 Karte
 
 - **Cluster:** Nahe Marker werden zusammengefasst; Zoom löst sie auf.
-- **Hintergrund:** OpenStreetMap, Topografie (OpenTopoMap), Satellit (Esri). Hinweise zu den Bedingungen in Kapitel 9.4.
+- **Hintergrund:** Straßenkarte (Esri, Standard), OpenStreetMap, Topografie (OpenTopoMap), Satellit (Esri), optional CARTO mit eigenem Key. Hinweise zu den Bedingungen in Kapitel 9.4.
 - **📍 Mein Standort:** setzt ein Suchkästchen auf den Browser-Standort (Freigabe durch den Nutzer erforderlich).
 - **🔗 Link kopieren:** schreibt Art, Gebiet (Rechteck oder Fläche) und Filter in den URL-Teil nach `#` und kopiert die Adresse. Beim Öffnen eines solchen Links wird die Suche wiederhergestellt. Bei lokalen Dateien enthält der Link den lokalen Pfad.
 - **↗ GBIF-Portal:** öffnet gbif.org mit Taxon und Gebiet.
@@ -159,6 +183,10 @@ Checkbox **MTB/Q/MF-Raster** zeichnet dünne Linien: MTB (6′ × 10′) ab Zoom
 ---
 
 ## 7. Ergebnisliste, Details, Phänologie, Export
+
+![Ergebnisliste und Phänologie-Grafik](docs/img/05-ergebnisse-phaenologie.png)
+
+*Abb. 7: Ergebnisbereich mit geöffneter Phänologie-Grafik (Funde pro Kalenderwoche, nach Lebensstadium eingefärbt) und erstem Listeneintrag (Beispieldaten).*
 
 - **Liste:** zeigt je Fund Art, Datum, Ort, Datensatz sowie MTB-Quadrant. Textfilter durchsucht u. a. Ortsteil, Quelle, Jahr. Sortierung: neueste/älteste, Fundort, Datenquelle.
 - **🔎 Details nachladen:** für bis zu 50 aktuell gefilterte Funde werden Beobachter- und Ortsdetails über GBIF (`/verbatim`), Nominatim (Rückwärtssuche, gedrosselt auf ca. eine Anfrage je 1,1 s), die iNaturalist-API (bei iNaturalist-Nachweisen) und – nur mit aktiviertem Proxy – Nachweis-Seiten nachgeladen. **Dabei können personenbezogene Daten (Beobachternamen) entstehen**, siehe Kapitel 9.6.
@@ -170,7 +198,9 @@ Checkbox **MTB/Q/MF-Raster** zeichnet dünne Linien: MTB (6′ × 10′) ab Zoom
 
 ## 8. Datenflüsse und optionaler Proxy
 
-![Datenflüsse](readme-assets/04-datenfluss.svg)
+![Datenflüsse](docs/img/04-datenfluss.svg)
+
+*Schema: beteiligte Dienste und Datenflüsse.*
 
 Beim Laden der Seite und bei Nutzung werden Anfragen **direkt aus deinem Browser** an folgende Dienste gesendet; dabei wird jeweils deine IP-Adresse übermittelt:
 
@@ -196,8 +226,8 @@ Stand der Recherche: 16.11.2026. Keine Rechtsberatung.
 `GBIFArtenfinder.html` enthält eigenen Programmcode sowie – per CDN nachgeladen, nicht eingebettet – Drittbibliotheken (9.2). **Eine Lizenz für den eigenen Code ist noch nicht festgelegt.** Ohne ausdrückliche Lizenz gilt das gesetzliche Urheberrecht (alle Rechte vorbehalten). Die Urheberin bzw. der Urheber muss entscheiden:
 
 ```
-Lizenz des Programmcodes: GNU General Public License, Version 3 oder später (SPDX: GPL-3.0-or-later)
-Copyright (c) 2026 Rainer Theuer
+Lizenz des Programmcodes:  [HIER EINTRAGEN, z. B. MIT, EUPL-1.2, GPL-3.0-or-later oder "alle Rechte vorbehalten"]
+Copyright (c) [Jahr] [Name]
 ```
 
 Wird der Code unter einer Lizenz veröffentlicht, die eine `LICENSE`-Datei erwartet (z. B. MIT), diese Datei dem Projekt beilegen. Die gewählte Lizenz muss mit den Bedingungen der Drittbibliotheken vereinbar sein (alle unten genannten sind permissiv bzw. im Fall der Schrift/Karten nicht Teil des Codes).
@@ -263,7 +293,9 @@ Für MIT-lizenzierte Komponenten gilt: Copyright-Vermerk und der MIT-Lizenztext 
 
 **OpenTopoMap:** Kartendaten © OpenStreetMap-Mitwirkende, SRTM; Kartendarstellung © OpenTopoMap, Lizenz **CC BY-SA 3.0**. Die Anwendung zeigt die verlangte Quellenangabe an. Es gilt fairer Gebrauch; keine Massenabrufe.
 
-**Esri World Imagery (Satellit):** Dienst und Bilder unterliegen den Nutzungsbedingungen von Esri und den Bildanbietern (Quellenangabe: „Esri, Maxar, Earthstar Geographics, and the GIS User Community“). **Die Bedingungen für den Abruf der Kacheln ohne Esri-Konto bzw. API-Schlüssel wurden hier nicht abschließend geprüft.** Für Veröffentlichung oder kommerzielle Nutzung vorab die aktuellen Esri-Bedingungen prüfen oder die Ebene entfernen.
+**CARTO Voyager (optional):** Rasterkacheln erfordern laut CARTO seit 2026 einen kostenlosen API-Key (Registrierung ohne Konto unter carto.com/basemaps/apikey); es gelten die CARTO-Basemaps-Bedingungen (Attribution „© OpenStreetMap-Mitwirkende © CARTO“, Fair-Use-Grenzen, Unterscheidung kommerziell/nicht-kommerziell). Den Key trägst du selbst ein; er wird nur lokal im Browser gespeichert.
+
+**Esri-Karten (Straßenkarte = Standard, Satellit):** Dienst und Bilder unterliegen den Nutzungsbedingungen von Esri und den Bildanbietern (Quellenangabe: „Esri, Maxar, Earthstar Geographics, and the GIS User Community“). **Die Bedingungen für den Abruf der Kacheln ohne Esri-Konto bzw. API-Schlüssel wurden hier nicht abschließend geprüft.** Für Veröffentlichung oder kommerzielle Nutzung vorab die aktuellen Esri-Bedingungen prüfen oder die Ebene entfernen.
 
 **Nominatim** (Ortssuche, Verwaltungsgrenzen, Rückwärtssuche): Der öffentliche Server ([Usage Policy](https://operations.osmfoundation.org/policies/nominatim/)) erlaubt höchstens **eine Anfrage pro Sekunde je Anwendung**, verlangt eine **gültige Referer- oder User-Agent-Angabe**, **Zwischenspeichern** wiederholter Anfragen, deutlich sichtbare Quellenangabe und untersagt Autocomplete und Massenabfragen. Der Ist-Zustand dieser Anwendung:
 
