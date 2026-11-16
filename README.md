@@ -4,7 +4,7 @@ Interaktive Karten-Oberfläche zur Suche von Artnachweisen (Biodiversitätsdaten
 
 > **Wichtiger Hinweis zu diesem Dokument:** Die Abschnitte zu Lizenzen, Datenschutz und Nutzungsbedingungen (Kapitel 9) wurden nach bestem Wissen und anhand der zum Zeitpunkt der Erstellung (16.11.2026) öffentlich einsehbaren Bedingungen der Anbieter erstellt. Sie sind **keine Rechtsberatung** und können nicht garantieren, dass jede Nutzung rechtlich einwandfrei ist. Bedingungen ändern sich; maßgeblich sind immer die Originaltexte der Anbieter (Links in Kapitel 9). Bei Veröffentlichung, kommerzieller Nutzung oder Weitergabe personenbezogener Daten sollte eine fachkundige Rechtsprüfung erfolgen.
 
-> **Zu den Abbildungen:** Die PNG-Bilder sind **Bildschirmaufnahmen der echten Oberfläche** (`GBIFArtenfinder.html`, gerendert in einem Headless-Browser). Weil dabei kein Internet zur Verfügung stand, enthalten sie **keine echten Kartenkacheln und keine echten GBIF-Daten**: Die Kartenfläche ist eine vereinfachte Platzhalter-Karte, die Fundpunkte, Listeneinträge, Beobachternamen („Beispiel-Beobachter“) und Datensätze („Beispiel-Datensatz“) sind **frei erfundene Beispieldaten**, und die Verwaltungsgrenze ist ein erfundener Beispielumriss. Bedienelemente, Texte, Farben, Liste und Phänologie-Grafik stammen aus dem Programm selbst; Raster-Beschriftungen sind mit der Programmfunktion für MTB/Quadrant/Minutenfeld berechnet. Die SVG-Bilder sind Schemazeichnungen. Eigene Screenshots mit echten Karten können unter `docs/img/` ergänzt werden.
+> **Zu den Abbildungen:** Die PNG-Bilder sind **Bildschirmaufnahmen der echten Oberfläche** (`GBIFArtenfinder.html`, gerendert in einem Headless-Browser). Weil dabei kein Internet zur Verfügung stand, enthalten sie **keine echten Kartenkacheln und keine echten GBIF-Daten**: Die Kartenfläche ist eine vereinfachte Platzhalter-Karte, die Fundpunkte, Listeneinträge, Beobachternamen („Beispiel-Beobachter“) und Datensätze („Beispiel-Datensatz“) sind **frei erfundene Beispieldaten**, und die Verwaltungsgrenze ist ein erfundener Beispielumriss. Bedienelemente, Texte, Farben, Liste und Phänologie-Grafik stammen aus dem Programm selbst; Raster-Beschriftungen sind mit der Programmfunktion für MTB/Quadrant/Minutenfeld berechnet. Die SVG-Bilder sind Schemazeichnungen. Eigene Screenshots mit echten Karten können unter `readme-assets/` ergänzt werden.
 
 ---
 
@@ -36,7 +36,7 @@ Interaktive Karten-Oberfläche zur Suche von Artnachweisen (Biodiversitätsdaten
 - Ergebnisliste mit Textfilter, Sortierung, MTB-Quadrant je Fund, optionalem Nachladen von Details, **Phänologie-Grafik** (Funde pro Kalenderwoche).
 - Export: **CSV** und **GeoJSON**; **Link** zum Teilen der Suche; Sprung ins **GBIF-Portal** mit gleicher Suche.
 
-![Gesamtansicht der Oberfläche mit Beispieldaten](docs/img/01-uebersicht.png)
+![Gesamtansicht der Oberfläche mit Beispieldaten](readme-assets/01-uebersicht.png)
 
 *Abb. 1: Gesamtansicht – links Karte mit Suchkästchen und Clustern, rechts Ergebnisliste (Beispieldaten, Platzhalter-Karte).*
 
@@ -68,7 +68,7 @@ Interaktive Karten-Oberfläche zur Suche von Artnachweisen (Biodiversitätsdaten
 5. **Verwaltungsgrenze** – Checkbox und zwei Übernahme-Buttons (Kapitel 5.4).
 6. **Filterzeile** – Jahr, Monate, Aufnahmeart, Foto, Genauigkeit, MTB/Q/MF-Raster, Standort, Link, GBIF-Portal, GeoJSON.
 
-![Kopfbereich mit Suchfeldern und Filterzeile](docs/img/02-kopf-filter.png)
+![Kopfbereich mit Suchfeldern und Filterzeile](readme-assets/02-kopf-filter.png)
 
 *Abb. 2: Kopfbereich mit Suchfeldern, Verwaltungsgrenze und Filterzeile.*
 
@@ -92,7 +92,7 @@ Es werden höchstens **1.000 Funde pro Suche** geladen; die Anzeige nennt die Ge
 
 ## 5. Flächen: zeichnen, speichern, laden, Verwaltungsgrenzen
 
-![Ablauf der Flächenfunktionen](docs/img/02-flaechen.svg)
+![Ablauf der Flächenfunktionen](readme-assets/02-flaechen.svg)
 
 *Schema: Zeichnen, Schließen, Speichern, Laden und Verwaltungsgrenze.*
 
@@ -125,14 +125,14 @@ Format (GeoJSON nach [RFC 7946](https://www.rfc-editor.org/rfc/rfc7946), Koordin
 }
 ```
 
-![Gezeichnete Fläche und Verwaltungsgrenze](docs/img/03-flaechen.png)
+![Gezeichnete Fläche und Verwaltungsgrenze](readme-assets/03-flaechen.png)
 
 *Abb. 3: Zeichenmodus mit gezeichneter Fläche (grün, Ecken und Kantenpunkte) und angezeigter Verwaltungsgrenze (violett, erfundener Beispielumriss).*
 
 ### 5.4 Verwaltungsgrenze
 
 1. Im Ortsfeld einen Ort oder eine Region eingeben, **Verwaltungsgrenze anzeigen** aktivieren und „Ort finden“ bzw. Enter wählen.
-![Bedienelemente für die Verwaltungsgrenze](docs/img/03b-verwaltungsgrenze.png)
+![Bedienelemente für die Verwaltungsgrenze](readme-assets/03b-verwaltungsgrenze.png)
 
 *Abb. 4: Ortsfeld, Checkbox und die beiden Übernahme-Buttons.*
 
@@ -162,11 +162,11 @@ Grenzen der Genauigkeit: Durch die Vereinfachung kann ein schmaler Randstreifen 
 
 ### 6.2 TK25-Raster (MTB / Quadrant / Minutenfeld)
 
-![TK25-Raster auf der Karte](docs/img/04-mtb-raster.png)
+![TK25-Raster auf der Karte](readme-assets/04-mtb-raster.png)
 
 *Abb. 5: MTB-Raster in hoher Zoomstufe: dunkelblaue Linien = MTB (hier Blatt 3625), gestrichelt = Quadrant, dünne graue Linien = Minutenfelder mit Nummern 1–15; zusätzlich Quadrantnummern 1–4.*
 
-![Schema des TK25-Rasters](docs/img/03-mtb-raster.svg)
+![Schema des TK25-Rasters](readme-assets/03-mtb-raster.svg)
 
 *Abb. 6: Schema: ein MTB mit 4 Quadranten und je 15 Minutenfeldern.*
 
@@ -184,7 +184,7 @@ Checkbox **MTB/Q/MF-Raster** zeichnet dünne Linien: MTB (6′ × 10′) ab Zoom
 
 ## 7. Ergebnisliste, Details, Phänologie, Export
 
-![Ergebnisliste und Phänologie-Grafik](docs/img/05-ergebnisse-phaenologie.png)
+![Ergebnisliste und Phänologie-Grafik](readme-assets/05-ergebnisse-phaenologie.png)
 
 *Abb. 7: Ergebnisbereich mit geöffneter Phänologie-Grafik (Funde pro Kalenderwoche, nach Lebensstadium eingefärbt) und erstem Listeneintrag (Beispieldaten).*
 
@@ -198,7 +198,7 @@ Checkbox **MTB/Q/MF-Raster** zeichnet dünne Linien: MTB (6′ × 10′) ab Zoom
 
 ## 8. Datenflüsse und optionaler Proxy
 
-![Datenflüsse](docs/img/04-datenfluss.svg)
+![Datenflüsse](readme-assets/04-datenfluss.svg)
 
 *Schema: beteiligte Dienste und Datenflüsse.*
 
